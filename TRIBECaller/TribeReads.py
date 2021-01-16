@@ -1,4 +1,7 @@
-from .TribeDict import *
+# -*- coding: utf-8 -*-
+
+from TRIBECaller.TribeDict import *
+
 import pysam
 from functools import partial
 from concurrent.futures import ProcessPoolExecutor   
@@ -28,7 +31,7 @@ class TribeReads(object):
 			ref_name = pysam.AlignmentFile(self.file_path).get_reference_name(reference_id)
 		else:
 			ref_name = reference_id
-		return list(map(lambda read: (read.get_reference_positions(), read.get_forward_sequence()), pysam.AlignmentFile(self.file_path).fetch(ref_name, start, end)))
+		return list(map(lambda read: (read.get_reference_positions(), GET_FORWARD_SEQUENCE(read)), pysam.AlignmentFile(self.file_path).fetch(ref_name, start, end)))
 
 	def get_reads_paired(self, reference_id, start:int, end:int):
 		if type(reference_id) == int:
@@ -37,6 +40,17 @@ class TribeReads(object):
 			ref_name = reference_id
 
 		return FLATTEN(list(map(lambda reads: [(read.get_reference_positions(), GET_FORWARD_SEQUENCE(read)) for read in reads], READ_PAIR_GENERATOR(pysam.AlignmentFile(self.file_path), ref_name, start, end))))
+
+	def build_nucleotide_dict(self, reference_id, start:int, end:int, bin_size = 1):
+		if type(reference_id) == int:
+			ref_name = pysam.AlignmentFile(self.file_path).get_reference_name(reference_id)
+		else:
+			ref_name = reference_id
+		reads = self.get_reads(ref_name, start, end)
+		nuc_dict = NucleotideDict(ref_name, bin_size)
+		for i in reads:
+			nuc_dict(i)
+		return nuc_dict
 
 	def build_as_dict(self, reference_id, start:int, end:int, bin_size = 1):
 		"""
@@ -51,7 +65,7 @@ class TribeReads(object):
 			ref_name = pysam.AlignmentFile(self.file_path).get_reference_name(reference_id)
 		else:
 			ref_name = reference_id
-		reads = self.get_reads_paired(ref_name, start, end)
+		reads = self.get_reads(ref_name, start, end)
 		as_dict = ASDict(ref_name, bin_size)
 		for i in reads:
 			as_dict(i)
@@ -63,6 +77,6 @@ class TribeReads(object):
 		else:
 			return self._chrom_sizes[reference_id]
 
-	def get_chrom_name():
+	def get_chrom_name(self):
 		return self._chrom_sizes.keys()
 

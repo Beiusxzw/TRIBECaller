@@ -1,4 +1,6 @@
-from .utils import *
+# -*- coding: utf-8 -*-
+
+from TRIBECaller.utils import *
 
 class ChromDict(dict):
 	def __setitem__(self, key, value):
@@ -44,7 +46,7 @@ class ASDict(dict):
 		if mkey not in self.keys():
 			if value == 'C' or value == 'G':
 				super().__setitem__(mkey, (0, 1, 1))
-			elif value == 'T':
+			elif value == 'A':
 				super().__setitem__(mkey, (1, 0, 1))
 			else:
 				super().__setitem__(mkey, (0, 0, 1))
