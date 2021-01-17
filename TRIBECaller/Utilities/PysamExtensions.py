@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+#
+# ------------------------- #
+# Python Modules
+# ------------------------- #
 
-import time
 from collections import defaultdict
 import pysam
 
@@ -19,6 +23,12 @@ CIGAR = {
 9:'B'  #BAM_CBACK
 }
 
+def MERGE_DICT(d1,d2,merge):
+    result = dict()
+    for k,v in d1.items():
+        if k in d2:
+            result[k] = merge(v,d2[k])
+    return result
 
 def IS_PAIRED(r:pysam.libcalignedsegment.AlignedSegment):
     return r.flag in SAM_FLAGS["F"] or  r.flag in SAM_FLAGS["R"]
@@ -116,27 +126,3 @@ def GET_FORWARD_SEQUENCE(read):
             return GET_WITHOUT_INSERTION(read)
         else:
             return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read))
-
-
-def GET_CUR_TIME(s=None):
-    return "[{}]".format(time.asctime()) + '\t' + s if s else "[{}]".format(time.asctime()) 
-
-def ROUND_DOWN(a, n):
-    return a - a % n
-
-def FLATTEN(x): return [i for s in x for i in s]
-
-def ROUND_UP(a, n):
-    return ROUND_DOWN(a + n - 1, n)
-
-def PRINT_LOGO():
-    print("""
- _____  __   _____  ___    __  ___      _ _           
-/__   \\/__\\  \\_   \\/ __\\  /__\\/ __\\__ _| | | ___ _ __ 
-  / /\\/ \\//   / /\\/__\\// /_\\ / /  / _` | | |/ _ \\ '__|
- / / / _  \\/\\/ /_/ \\/  \\//__/ /__| (_| | | |  __/ |   
- \\/  \\/ \\_/\\____/\\_____/\\__/\\____/\\__,_|_|_|\\___|_|                                               
-    """)
-
-def PRINT_INFO():
-    print("Version: " + "Demo Version")
