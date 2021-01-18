@@ -51,9 +51,9 @@ def plot_editing_sites(target_path:str,
 		y1=0
 		y2=0
 		if call_editing_sites:
-			if odds[ind] > 2 and pval[ind] < 0.05:
-				with np.errstate(invalid='ignore'):
-					where=(np.array(odds) > 2) & (np.array(pval) < 0.05) & np.array(list(map(lambda x:x[1][0]/sum(x[1]) > 0.8, perc)))
+			if odds[ind] > 2 and pval[ind] < 0.05 and perc[ind][1][0]>0.8:
+				#with np.errstate(invalid='ignore'):
+				#	where=(np.array(odds) > 2) & (np.array(pval) < 0.05) & np.array(list(map(lambda x:x[1][0] > 0.8, perc)))
 				ax1.axvspan(region[ind],region[ind]+1,color="yellow")
 		for n,j in enumerate(i[0]):
 			ax1.add_patch(make_nucleotides_elements(NUC[n][0],x=pos,y=y1,height=j,color=NUC[n][1]))

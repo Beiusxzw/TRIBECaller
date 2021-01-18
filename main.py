@@ -66,7 +66,7 @@ def prepare_argparser():
 	desc = "Editing site caller for TRIBE"
 	epilog = "For command line options for each command, type COMMAND -h"
 	parser = argparse.ArgumentParser(description = desc, epilog = epilog)
-	parser.add_argument('-v', '--version', action="version",version=__version__)
+	parser.add_argument('-v', '--version', action="version",version="TRIBECaller\t" + __version__)
 	subparsers = parser.add_subparsers(dest='subcommand')
 	subparsers.required = True
 
@@ -109,7 +109,7 @@ def add_plot_editing_region_parser(subparsers):
 	Add main function 'call editing regions' argument parsers
 	"""
 	argparser_plot_editing_sites = subparsers.add_parser("plotEditingRegion", help="Plot editing events within a genomic region",epilog="""Examples:
-python main.py plotEditingRegion -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam --region 1:1214232:1214243
+python main.py plotEditingRegion -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam --gene POU5F1
 	""")
 	argparser_plot_editing_sites.add_argument('-t', '--target', type=str, help='input taregt bam file',required=True)
 	argparser_plot_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
