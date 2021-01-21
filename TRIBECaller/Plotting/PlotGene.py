@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# Author: Ziwei Xue
 
 from TRIBECaller.GtfReads import *
 
@@ -17,8 +19,21 @@ def make_gene_elements(gene_gtfs, y_pos, ax):
 	ga_esti = (int(gene_gtfs[-1][GtfReads.Flag.End]) - int(gene_gtfs[0][GtfReads.Flag.Start])) // 10
 	for i in gene_gtfs:
 		if i[GtfReads.Flag.Feature] == "transcript":
+			# The while loop is to calculate the y-position of each transcripts. 
+			# If there is no overlap between two transcripts in the same level, 
+			# break and the y-position will return.
 			if flag:
-				y_pos-=0.3
+				y_pos=1
+				while y_pos in pos_dict.keys():
+					if ((int(i[GtfReads.Flag.Start]) >  pos_dict[y_pos][0]) and (int(i[GtfReads.Flag.End]) < pos_dict[y_pos][1])) or ((int(i[GtfReads.Flag.End]) > pos_dict[y_pos][0]) and (int(i[GtfReads.Flag.Start]) <  pos_dict[y_pos][1])) :
+						y_pos -= 0.3
+					else:
+						pos_dict[y_pos] = (min(pos_dict[y_pos][0], int(i[GtfReads.Flag.Start])), max(pos_dict[y_pos][1], int(i[GtfReads.Flag.End])))
+						break
+				if y_pos not in pos_dict.keys():
+					pos_dict[y_pos] = (int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
+			else:
+				pos_dict[y_pos] = (int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 			mark = '>' if i[GtfReads.Flag.Strand] == '+' else '<'
 			gene_length = int(i[GtfReads.Flag.End]) - int(i[GtfReads.Flag.Start])
 			cur_end = int(i[GtfReads.Flag.End])

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# Author: Ziwei Xue
 #
 # Description: TribeCaller main executable
 #
@@ -39,7 +40,7 @@ def main():
 		from TRIBECaller.Commands.PlotEditingRegion import plot_editing_sites
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("plotEditingSite")))
 		dpi = args.dpi if args.dpi else 300
-		plot_editing_sites(args.target,args.control,args.region,args.out,True,dpi)
+		plot_editing_sites(args.target,args.control,region=args.region,output_path=args.out,call_editing_sites=True,dpi=dpi)
 		print(GET_CUR_TIME("Running completed."))
 	elif subcommand == "plotEditingRegion":
 		from TRIBECaller.Commands.PlotEditingRegion import plot_editing_region
@@ -83,7 +84,7 @@ def add_call_editing_sites_parser(subparsers):
 python main.py callEditingSites -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam -o testPrefix
 	""")
 
-	argparser_call_editing_sites.add_argument('-t', '--target', type=str, help='input taregt bam file',required=True)
+	argparser_call_editing_sites.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
 	argparser_call_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
 	argparser_call_editing_sites.add_argument('-f', '--frameSize', type=int, default=600000,help='bin size of calling editing event')
 	argparser_call_editing_sites.add_argument('-b', '--binSize', type=int, default=1,help='bin size of calling editing event')
@@ -92,12 +93,12 @@ python main.py callEditingSites -t Experiment_rep1_1_srt.bam -c Control_rep1_1_s
 
 def add_plot_editing_site_parser(subparsers):
 	"""
-	Add main function 'call editing regions' argument parsers
+	Add main function 'plot editing site' argument parsers
 	"""
 	argparser_plot_editing_sites = subparsers.add_parser("plotEditingSite", help="Plot nucleotides from reads within a genomic region",epilog="""Examples:
 python main.py plotEditingSite -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam --region 1:1214232:1214243
 	""")
-	argparser_plot_editing_sites.add_argument('-t', '--target', type=str, help='input taregt bam file',required=True)
+	argparser_plot_editing_sites.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
 	argparser_plot_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
 	argparser_plot_editing_sites.add_argument('-r', '--region', type=str, help='genomic region of interests. Format: 1:1072894-1078023',required=True)
 	argparser_plot_editing_sites.add_argument('-o', '--out', type=str,  help='prefix of output figure',required=True)
@@ -106,12 +107,12 @@ python main.py plotEditingSite -t Experiment_rep1_1_srt.bam -c Control_rep1_1_sr
 
 def add_plot_editing_region_parser(subparsers):
 	"""
-	Add main function 'call editing regions' argument parsers
+	Add main function 'plot editing region' argument parsers
 	"""
 	argparser_plot_editing_sites = subparsers.add_parser("plotEditingRegion", help="Plot editing events within a genomic region",epilog="""Examples:
 python main.py plotEditingRegion -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam --gene POU5F1
 	""")
-	argparser_plot_editing_sites.add_argument('-t', '--target', type=str, help='input taregt bam file',required=True)
+	argparser_plot_editing_sites.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
 	argparser_plot_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
 	argparser_plot_editing_sites.add_argument('-r', '--region', type=str, help='genomic region of interests. Format: 1:1072894-1078023',required=False)
 	argparser_plot_editing_sites.add_argument('-g', '--gene', type=str, help='gene of intersets. For multiple genes, use comma separated input.',required=False)

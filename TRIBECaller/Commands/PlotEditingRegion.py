@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
-#
+# Author: Ziwei Xue
 # ------------------------- #
 # own Python Modules
 # ------------------------- #
@@ -19,19 +19,22 @@ from TRIBECaller.Utilities.utils import *
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+import seaborn as sns
 
 def plot_editing_sites(target_path:str,
 					   control_path:str,
 					   region:str,
 					   output_path:str=None,
 					   call_editing_sites=True,
+					   a_content_threshold=0.8,
 					   dpi=300):
 	TEC = TribeCaller(target_path,control_path)
 	chr_,start,end=parse_region(region)
 	if call_editing_sites:
-		region,perc,odds,pval=TEC.compute_region_as_percentage(chr_,start,end,call_editing_sites=True)
+		region,perc,edi=TEC.compute_region_as_percentage(chr_,start,end,call_editing_sites=True)
 	else:
 		region,perc=TEC.compute_region_as_percentage(chr_,start,end)
+	print(edi)
 	fig,(ax1,ax2)=plt.subplots(2,1,figsize=(16,6))
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	ax1.set_xbound(region[0],region[-1]+1)
@@ -51,9 +54,7 @@ def plot_editing_sites(target_path:str,
 		y1=0
 		y2=0
 		if call_editing_sites:
-			if odds[ind] > 2 and pval[ind] < 0.05 and perc[ind][1][0]>0.8:
-				#with np.errstate(invalid='ignore'):
-				#	where=(np.array(odds) > 2) & (np.array(pval) < 0.05) & np.array(list(map(lambda x:x[1][0] > 0.8, perc)))
+			if edi[ind]:
 				ax1.axvspan(region[ind],region[ind]+1,color="yellow")
 		for n,j in enumerate(i[0]):
 			ax1.add_patch(make_nucleotides_elements(NUC[n][0],x=pos,y=y1,height=j,color=NUC[n][1]))
@@ -97,42 +98,52 @@ def plot_editing_region(target_path:str,
 	else:
 		raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
 	print(GET_CUR_TIME("Computing coverage and editing sites"))
-	reg, cov, edi = TEC.call_editing_region_coverage(chr_,start,end)
+	reg, cov, edi, diff = TEC.call_editing_region_coverage(chr_,start,end)
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	print(GET_CUR_TIME("Plotting coverage and editing sites"))
-	gs = gridspec.GridSpec(4, 1, height_ratios=[3,1,1,1]) 
-	fig=plt.Figure(figsize=(10,8))
+	gs = gridspec.GridSpec(5, 1, height_ratios=[3,.5,1,.5,.5]) 
+	fig=plt.Figure(figsize=(12,8))
 	ax1 = fig.add_subplot(gs[0])
 	ax2 = fig.add_subplot(gs[1])
 	ax3 = fig.add_subplot(gs[2])
 	ax4 = fig.add_subplot(gs[3])
+	ax5 = fig.add_subplot(gs[4])
 	y_min = make_gene_elements(result,1,ax1)
 	ax2.bar(height=list(map(lambda x:x[0],cov)),x=reg)
-	ax4.bar(height=list(map(lambda x:x[1],cov)),x=reg)
+	ax5.bar(height=list(map(lambda x:x[1],cov)),x=reg,color="#FDBE84")
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi)), marker='^',color='red')
+	ax4.bar(x=reg,height=diff)
+	#sns.kdeplot(reg,diff,ax=ax4)
 	for i in ["left","top","right"]:
 		ax1.spines[i].set_visible(False)
 		ax2.spines[i].set_visible(False)
 		ax3.spines[i].set_visible(False)
-		ax4.spines[i].set_visible(False)
+		ax5.spines[i].set_visible(False)
 	ax1.spines['bottom'].set_visible(False)
 	ax3.spines['bottom'].set_visible(False)
+	ax1.set_ylabel("Gene",rotation = 90,fontfamily="Arial",fontsize=6)
+	ax2.set_ylabel("TRIBE RNA-seq \ncoverage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
+	ax3.set_ylabel("Editing Events",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
+	ax4.set_ylabel("Relative S/A \npercentage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
+	ax5.set_ylabel("Control RNA-seq \ncoverage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
 	ax1.get_yaxis().set_ticks([])
 	ax2.get_yaxis().set_ticks([])
 	ax3.get_yaxis().set_ticks([])
-	ax4.get_yaxis().set_ticks([])
+	ax5.get_yaxis().set_ticks([])
 	ax1.get_xaxis().set_ticks([])
 	ax2.get_xaxis().set_ticks([])
 	ax3.get_xaxis().set_ticks([])
-	ax1.set_ybound(y_min-0.2,1.2) if y_min < 0 else ax1.set_ybound(y_min-0.2,1.2) 
+	ax4.get_xaxis().set_ticks([])
+	ax1.set_ybound(y_min-0.2,1.2) if y_min < -1 else ax1.set_ybound(y_min-0.2,1.2) 
 	x_min,x_max=ax1.get_xlim()
 	ax2.set_xbound(x_min,x_max)
 	ax3.set_xbound(x_min,x_max)
 	ax4.set_xbound(x_min,x_max)
+	ax5.set_xbound(x_min,x_max)
 	ticks_range = PICK(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)
-	ax4.get_xaxis().set_ticks(ticks_range)
-	ax4.set_xticklabels(list(map(lambda x:str(x),ticks_range)),fontfamily="Arial")
-	ax4.set_xlabel("chromosome "+chr_,fontfamily="Arial",fontweight=600)
+	ax5.get_xaxis().set_ticks(ticks_range)
+	ax5.set_xticklabels(list(map(lambda x:str(x),ticks_range)),fontfamily="Arial")
+	ax5.set_xlabel("chromosome "+chr_,fontfamily="Arial",fontweight=600)
 	if output_path:
 		fig.savefig(output_path,dpi=dpi)
 	return 

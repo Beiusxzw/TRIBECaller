@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# Author: Ziwei Xue
 
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath

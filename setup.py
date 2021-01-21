@@ -57,5 +57,5 @@ setup(
         "pysam >= 0.14.0",
         "tqdm >= 4.36.1"
     ],
-    entry_points={"console_scripts":[""]}
+    entry_points={"console_scripts":["main.py"]}
 )

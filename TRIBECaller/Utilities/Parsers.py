@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# Author: Ziwei Xue
 
 def parse_region(s:str):
 	try:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# Author: Ziwei Xue
 
 import time
 from TRIBECaller._version import __version__
@@ -47,7 +48,7 @@ def PRINT_LOGO():
     print("")                                       
 
 def PRINT_INFO():
-    print("Version: " + __version__)
+    print("Version: " + __version__ + ", Written by Snow")
 
 def GET_RED(s):
     return "\x1b[{};{};{}m".format(BackgroundLighness.LEVEL2, FontColor.RED, BackgroundColor.NULL) + s + "\x1b[0m"
