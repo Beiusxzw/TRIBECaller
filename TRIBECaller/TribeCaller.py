@@ -43,17 +43,12 @@ class TribeCaller(object):
 		self.bin_size = bin_size
 		self.num_threads = num_threads
 
-	def compute_as_content(self, reference_id, start:int, end:int):
-		target_asdict =  self.target.build_as_dict(reference_id, start, end, self.bin_size)
-		control_asdict = self.control.build_as_dict(reference_id, start, end, self.bin_size)
-		return target_asdict.merge(control_asdict, lambda x,y:(x,y))
-
 	def compute_atcg_content(self, reference_id, start:int, end:int):
 		target_atcgdict =  self.target.build_atcg_dict(reference_id, start, end, self.bin_size)
 		control_atcgdict = self.control.build_atcg_dict(reference_id, start, end, self.bin_size)
 		return target_atcgdict.merge(control_atcgdict, lambda x,y:(x,y))
 
-	def compute_region_as_percentage(self,reference_id,start:int,end:int=None, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05,  call_editing_sites=False):
+	def compute_region_as_percentage(self,reference_id,start:int,end:int=None, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05,diff_cutoff=None,call_editing_sites=False):
 		if end:
 			if end - start > 200:
 				raise TypeError("the region length should not exceed 200bp")
@@ -86,9 +81,21 @@ class TribeCaller(object):
 		res = list(map(lambda x: (stats.fisher_exact([[x[0][3], x[1][3]],[x[0][0], x[1][0]]], "greater"), stats.fisher_exact([[x[0][2], x[1][2]],[x[0][1], x[1][1]]], "greater")), values))
 		odds_f, pval_f, odds_r, pval_r = np.array(list(map(lambda x:x[0], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[0], map(lambda x:x[1],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[1],res))))
 		if complex:
-			return [(list(merged_atcgdict.keys())[x],diff[x][0],diff[1],values[x][0][0],values[x][0][3],values[x][1][0],values[x][1][3], values[x][0][1],values[x][0][2], values[x][1][1],values[x][1][2],pval_f[x],pval_r[x]) for x in range(len(res)) if  (odds_f[x] > threshold and pval_f[x] < pvalue_cutoff and values[x][1][0]/values[x][1][4] > content_threshold) or (odds_r[x] > threshold and pval_r[x] < pvalue_cutoff and values[x][1][1]/values[x][1][4] > content_threshold)]
+			out = []
+			for x in range(len(res)):
+				if (odds_f[x] > threshold and pval_f[x] < pvalue_cutoff and values[x][1][0]/values[x][1][4] > content_threshold):
+					out.append((list(merged_atcgdict.keys())[x],diff[x][0],values[x][0][0],values[x][0][3],values[x][1][0],values[x][1][3], pval_f[x], '+'))
+				if (odds_r[x] > threshold and pval_r[x] < pvalue_cutoff and values[x][1][1]/values[x][1][4] > content_threshold):
+					out.append((list(merged_atcgdict.keys())[x],diff[x][1],values[x][0][1],values[x][0][2],values[x][1][1],values[x][1][2], pval_r[x], '-'))
+			return out
 		else:
-			return [(list(merged_atcgdict.keys())[x],diff[x][0],diff[1],pval_f[x],pval_r[x]) for x in range(len(res)) if (odds_f[x] > threshold and pval_f[x] < pvalue_cutoff and values[x][1][0]/values[x][1][4] > content_threshold) or (odds_r[x] > threshold and pval_r[x] < pvalue_cutoff and values[x][1][1]/values[x][1][4] > content_threshold)]
+			out = []
+			for x in range(len(res)):
+				if (odds_f[x] > threshold and pval_f[x] < pvalue_cutoff and values[x][1][0]/values[x][1][4] > content_threshold):
+					out.append((list(merged_atcgdict.keys())[x],diff[x][0],pval_f[x],'+'))
+				if (odds_r[x] > threshold and pval_r[x] < pvalue_cutoff and values[x][1][1]/values[x][1][4] > content_threshold):
+					out.append((list(merged_atcgdict.keys())[x],diff[x][1],pval_r[x],'-'))
+			return out
 
 	def call_editing_region_coverage(self,reference_id, start:int, end:int, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05):
 		def _helper(x):
@@ -107,15 +114,17 @@ class TribeCaller(object):
 	def compute_nucleotides_coverage(self,reference_id, start:int, end:int, threshold=2):
 		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
 		values=list(merged_atcgdict.values())
-		return list(zip(list(merged_asdict.keys()), values))
+		return list(zip(list(merged_atcgdict.keys()), list(map(lambda x:x[0], values)), list(map(lambda x:x[1], values))))
 
 	def run_editing_percentage(self, call_editing_sites=False):
 		result_dict = dict.fromkeys(self._chrom_sizes.keys(),list())
 		for chrom,length in self._chrom_sizes.items():
 			print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
 			for i in tqdm.trange(0,length,self.frame_size):
-				result_dict[chrom] = result_dict[chrom] + self.compute_nucleotides_coverage(chrom, i, i+self.frame_size)[1]
-		return FLATTEN(result_dict.values())
+				result_dict[chrom] = result_dict[chrom] + self.compute_nucleotides_coverage(chrom, i, i+self.frame_size)
+				break
+			break
+		return result_dict
 
 	def run(self):
 		result_dict = dict.fromkeys(self._chrom_sizes.keys(),list())
@@ -123,6 +132,8 @@ class TribeCaller(object):
 			print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
 			for i in tqdm.trange(0,length,self.frame_size):
 				result_dict[chrom] = result_dict[chrom] + self.call_editing_region(chrom, i, i+self.frame_size)
+				break
+			break
 		return result_dict
 
 	def run_par(self):

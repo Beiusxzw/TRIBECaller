@@ -36,6 +36,11 @@ def main():
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("callEditingSites")))
 		call_editing_sites(args.target,args.control,args.outPrefix)
 		print(GET_CUR_TIME("Running completed."))
+	elif subcommand == "computeCoverage":
+		from TRIBECaller.Commands.ComputeCoverage import compute_coverage
+		print(GET_CUR_TIME("Start running program " + GET_BLUE("computeCoverage")))
+		compute_coverage(args.target,args.control,args.outPrefix)
+		print(GET_CUR_TIME("Running completed."))
 	elif subcommand == "plotEditingSite":
 		from TRIBECaller.Commands.PlotEditingRegion import plot_editing_sites
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("plotEditingSite")))
@@ -74,6 +79,7 @@ def prepare_argparser():
 	add_call_editing_sites_parser(subparsers)
 	add_plot_editing_site_parser(subparsers)
 	add_plot_editing_region_parser(subparsers)
+	add_compute_coverage_parser(subparsers)
 	return parser
 
 def add_call_editing_sites_parser(subparsers):
@@ -86,9 +92,21 @@ python main.py callEditingSites -t Experiment_rep1_1_srt.bam -c Control_rep1_1_s
 
 	argparser_call_editing_sites.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
 	argparser_call_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
-	argparser_call_editing_sites.add_argument('-f', '--frameSize', type=int, default=600000,help='bin size of calling editing event')
 	argparser_call_editing_sites.add_argument('-b', '--binSize', type=int, default=1,help='bin size of calling editing event')
 	argparser_call_editing_sites.add_argument('-o', '--outPrefix', type=str, default = "TribeCallerOutput", help='prefix of output bed file',required=True)
+	return 
+
+def add_compute_coverage_parser(subparsers):
+	"""
+	Add main function 'call editing sites' argument parsers
+	"""
+	argparser_compute_coverage = subparsers.add_parser("computeCoverage", help="Compute coverage and nucleotides content",epilog="""Examples:
+python main.py computeCoverage -t Experiment_rep1_1_srt.bam -c Control_rep1_1_srt.bam -o testPrefix
+	""")
+
+	argparser_compute_coverage.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
+	argparser_compute_coverage.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
+	argparser_compute_coverage.add_argument('-o', '--outPrefix', type=str, default = "TribeCallerOutput", help='prefix of output bed file',required=True)
 	return 
 
 def add_plot_editing_site_parser(subparsers):

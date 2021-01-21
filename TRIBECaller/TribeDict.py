@@ -52,32 +52,6 @@ class NucleotideDict(TribeDict):
 			prev_val = self.__getitem__(mkey)
 			super().__setitem__(mkey, (prev_val[0] + value, prev_val[1]+1))
 
-class ASDict(TribeDict):
-	"""
-	class ASDict: Extented dictionary for mapping A-C/G count and total reads count.
-	"""
-	def __setitem__(self, key, value):
-		mkey = ROUND_DOWN(key, self.bin_size) if self.bin_size != 1 else key
-		if mkey not in self.keys():
-			if value == 'C' or value == 'G':
-				super().__setitem__(mkey, (0, 1, 1))
-			elif value == 'A':
-				super().__setitem__(mkey, (1, 0, 1))
-			else:
-				super().__setitem__(mkey, (0, 0, 1))
-		else:
-			prev_val = self.__getitem__(mkey)
-			if value == 'C' or value == 'G':
-				# mvalue = (prev_val[0]*(prev_val[2]/(prev_val[2]+1)), ((prev_val[1] * prev_val[2] + 1)/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0], prev_val[1] + 1, prev_val[2]+1)
-			elif value == 'A':
-				# mvalue = (((prev_val[0] * prev_val[2] + 1)/(prev_val[2]+1)), prev_val[1]*(prev_val[2]/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0] + 1, prev_val[1], prev_val[2]+1)
-			else:
-				#mvalue = (prev_val[0]*(prev_val[2]/(prev_val[2]+1)), prev_val[1]*(prev_val[2]/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0], prev_val[1], prev_val[2]+1)
-			super().__setitem__(mkey, mvalue)
-
 class ATCGDict(TribeDict):
 	"""
 	class ATCGDict: Extented dictionary for mapping A-T-C-G count and total reads count.
