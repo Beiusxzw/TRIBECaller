@@ -34,12 +34,19 @@ def main():
 	if subcommand == "callEditingSites":
 		from TRIBECaller.Commands.CallEditingSites import call_editing_sites
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("callEditingSites")))
-		call_editing_sites(args.target,args.control,args.outPrefix)
+		if args.contig:
+			call_editing_sites(args.target,args.control,args.outPrefix,g_zip=args.gzip,contig=args.contig)
+		else:
+			call_editing_sites(args.target,args.control,args.outPrefix,g_zip=args.gzip)
 		print(GET_CUR_TIME("Running completed."))
 	elif subcommand == "computeCoverage":
 		from TRIBECaller.Commands.ComputeCoverage import compute_coverage
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("computeCoverage")))
-		compute_coverage(args.target,args.control,args.outPrefix)
+		if args.contig:
+			contig = list(map(lambda x:x.strip(), args.contig.split(','))) if ',' in args.contig else args.contig
+			compute_coverage(args.target,args.control,args.outPrefix,g_zip=args.gzip,contig=contig)
+		else:
+			compute_coverage(args.target,args.control,args.outPrefix,g_zip=args.gzip)
 		print(GET_CUR_TIME("Running completed."))
 	elif subcommand == "plotEditingSite":
 		from TRIBECaller.Commands.PlotEditingRegion import plot_editing_sites
@@ -94,6 +101,8 @@ python main.py callEditingSites -t Experiment_rep1_1_srt.bam -c Control_rep1_1_s
 	argparser_call_editing_sites.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
 	argparser_call_editing_sites.add_argument('-b', '--binSize', type=int, default=1,help='bin size of calling editing event')
 	argparser_call_editing_sites.add_argument('-o', '--outPrefix', type=str, default = "TribeCallerOutput", help='prefix of output bed file',required=True)
+	argparser_call_editing_sites.add_argument('-contig', '--contig', type=str,help='chromosome of interests',required=False)
+	argparser_call_editing_sites.add_argument('-gz', '--gzip', default=False,help='output gzipped file',action='store_true')
 	return 
 
 def add_compute_coverage_parser(subparsers):
@@ -107,6 +116,8 @@ python main.py computeCoverage -t Experiment_rep1_1_srt.bam -c Control_rep1_1_sr
 	argparser_compute_coverage.add_argument('-t', '--target', type=str, help='input target bam file',required=True)
 	argparser_compute_coverage.add_argument('-c', '--control', type=str, help='input control bam file',required=True)
 	argparser_compute_coverage.add_argument('-o', '--outPrefix', type=str, default = "TribeCallerOutput", help='prefix of output bed file',required=True)
+	argparser_compute_coverage.add_argument('-contig', '--contig', type=str,help='chromosome of interests',required=False)
+	argparser_compute_coverage.add_argument('-gz', '--gzip', default=False,help='output gzipped file',action='store_true')
 	return 
 
 def add_plot_editing_site_parser(subparsers):

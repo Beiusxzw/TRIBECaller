@@ -24,10 +24,10 @@ import pysam
 # 512 0x200   0b1000000000    not passing filters, such as platform/vendor quality controls
 # 1024    0x400   0b10000000000   PCR or optical duplicate
 # 2048    0x800   0b100000000000  supplementary alignment
-# ---------------------------------------------------------------------------------------------------------------------------
-#      Bits     ||  0x1   |     0x2     |    0x4   |       0x8     |   0x10  |     0x20     |      0x40     |       0x80     |
-#  Description  || Paired | Proper Pair | unMapped | Mate unMapped | Reverse | Mate Reverse | First in pair | Second in pair | 
-# ---------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------
+#      Bits     |  0x1   |     0x2     |    0x4   |       0x8     |   0x10  |     0x20     |      0x40     |       0x80     |
+#  Description  | Paired | Proper Pair | unMapped | Mate unMapped | Reverse | Mate Reverse | First in pair | Second in pair | 
+# --------------------------------------------------------------------------------------------------------------------------
 # Not fequently used
 # -------------------------------------------------------------------------------------------------------------------------------
 #          0x100        |                  0x200                    |               0x400              |         0x800           |
@@ -51,9 +51,9 @@ import pysam
 # SP: Read Second in Pair, if paired
 #
 SAM_FLAGS = {"F": [0b10000000,0b01010000,0b10100011,0b01010011,0b00000000],
-             "R": [0b10010000,0b01000000,0b10010011,0b01100011,0b00010000]}
-             #"FP":[0b01000000,0b01100011,0b01010000,0b01010011],
-             #"SP":[0b10010000,0b10010011,0b10000000,0b10100011]}
+             "R": [0b10010000,0b01000000,0b10010011,0b01100011,0b00010000],
+             "FP":[0b01000000,0b01100011,0b01010000,0b01010011],
+             "SP":[0b10010000,0b10010011,0b10000000,0b10100011]}
 # Which is equal to 
 # {'F': [128, 80, 163, 83, 0],
 # 'R' : [144, 64, 147, 99, 16],
@@ -126,16 +126,16 @@ def IS_PAIRED_FIRST(r:pysam.libcalignedsegment.AlignedSegment):
     return True if the pysam.libcalignedsegment.AlignedSegment is Read-First-in-Pair
     return False if the pysam.libcalignedsegment.AlignedSegment is not Read-First-in-Pair or the read do not come from pair-ended library
     """
-    return r.flag & 0b10000000
-    # return r.flag in SAM_FLAGS["FP"]
+    # return r.flag & 0b10000000
+    return r.flag in SAM_FLAGS["FP"]
 
 def IS_PAIRED_SECOND(r:pysam.libcalignedsegment.AlignedSegment):
     """
     return True if the pysam.libcalignedsegment.AlignedSegment is Read-Second-in-Pair
     return False if the pysam.libcalignedsegment.AlignedSegment is not Read-Second-in-Pair or the read do not come from pair-ended library
     """
-    return r.flag & 0b01000000
-    # return r.flag in SAM_FLAGS["SP"]
+    # return r.flag & 0b01000000
+    return r.flag in SAM_FLAGS["SP"]
 
 def COMPLEMENT(seq):
     """

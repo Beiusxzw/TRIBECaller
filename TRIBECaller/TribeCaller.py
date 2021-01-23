@@ -18,6 +18,8 @@ import numpy as np
 import scipy.stats as stats
 from typing import Optional, Union, Tuple
 import tqdm
+import gzip
+from functools import partial
 
 # ------------------------- #
 # Main Class
@@ -44,11 +46,27 @@ class TribeCaller(object):
 		self.num_threads = num_threads
 
 	def compute_atcg_content(self, reference_id, start:int, end:int):
+		"""
+		compute A,T,C,G content in each nucleotides position
+		@args reference_id: contig name of interest
+		@args start: integer, start position
+		@args end: integer, end position
+		"""
 		target_atcgdict =  self.target.build_atcg_dict(reference_id, start, end, self.bin_size)
 		control_atcgdict = self.control.build_atcg_dict(reference_id, start, end, self.bin_size)
 		return target_atcgdict.merge(control_atcgdict, lambda x,y:(x,y))
 
 	def compute_region_as_percentage(self,reference_id,start:int,end:int=None, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05,diff_cutoff=None,call_editing_sites=False):
+		"""
+		for use of plotEditingRegion.py
+		compute A,T,C,G content in each nucleotides position
+		@args reference_id: contig name of interest
+		@args start: integer, start position
+		@args end: integer, end position
+		@args threshold: 
+		@args content_threshold
+		@args pvalue_cutoff
+		"""
 		if end:
 			if end - start > 200:
 				raise TypeError("the region length should not exceed 200bp")
@@ -74,7 +92,28 @@ class TribeCaller(object):
 				return list(range(start,end)), list(map(lambda x:[x[0][:4],x[1][:4]], result)), ((odds_f > threshold) & (pval_f < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][0]/x[1][4]  > content_threshold if x[1][4] > 0 else False, count))))) | ((odds_r > threshold) & (pval_r < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][1]/x[1][4] > content_threshold if x[1][4] > 0 else False, count)))))
 		return list(range(start,end)), result
 
-	def call_editing_region(self,reference_id, start:int, end:int, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, complex=False):
+	def call_editing_region_coverage(self,reference_id, start:int, end:int, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05):
+		"""
+		for use of plotEditingRegion.py
+		compute read coverage of every nucleotide poition, and call editing sites
+		"""
+		def _helper(x):
+			return 0 if x < 0 else x
+		print(GET_CUR_TIME("Computing bam coverage and nucleotides content"))
+		#if end - start > 200000:
+		#	raise TypeError("the region length should not exceed 200000bp")
+		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
+		values=list(merged_atcgdict.values())
+		diff = list(map(lambda x: ( _helper((x[0][3]/(x[0][0]+x[0][3])) - (x[1][3]/(x[1][0]+x[1][3]))) if (x[0][0]+x[0][3] > 0 and x[1][0]+x[1][3] > 0) else 0, _helper((x[0][2]/(x[0][1]+x[0][2]) - (x[1][2]/(x[1][1]+x[1][2])))) if (x[0][1]+x[0][2] > 0 and x[1][1]+x[1][2] > 0) else 0) if x[0][4] > 5 and x[1][4] > 5 else 0, values))
+		res = list(map(lambda x: (stats.fisher_exact([[x[0][3], x[1][3]],[x[0][0], x[1][0]]], "greater"), stats.fisher_exact([[x[0][2], x[1][2]],[x[0][1], x[1][1]]], "greater")), values))
+		odds_f, pval_f, odds_r, pval_r = np.array(list(map(lambda x:x[0], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[0], map(lambda x:x[1],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[1],res))))
+		with np.errstate(invalid='ignore'):
+			return list(merged_atcgdict.keys()), list(map(lambda y: (y[0][4],y[1][4]), merged_atcgdict.values())), ((odds_f > threshold) & (pval_f < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][0]/x[1][4] > content_threshold, values))))), ((odds_r > threshold) & (pval_r < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][1]/x[1][4] > content_threshold, values))))), list(map(lambda x:max(x) if type(x) == tuple else x, diff))
+
+	def call_editing_region(self,reference_id, start:int, end:int, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, complex=True):
+		"""
+		call editing events in a certain region
+		"""
 		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
 		values=list(merged_atcgdict.values())
 		diff = list(map(lambda x: ((x[0][3]/(x[0][0]+x[0][3])) - (x[1][3]/(x[1][0]+x[1][3])) if (x[0][0]+x[0][3] > 0 and x[1][0]+x[1][3] > 0) else None, (x[0][2]/(x[0][1]+x[0][2]) - (x[1][2]/(x[1][1]+x[1][2]))) if (x[0][1]+x[0][2] > 0 and x[1][1]+x[1][2] > 0) else None ), values))
@@ -97,54 +136,94 @@ class TribeCaller(object):
 					out.append((list(merged_atcgdict.keys())[x],diff[x][1],pval_r[x],'-'))
 			return out
 
-	def call_editing_region_coverage(self,reference_id, start:int, end:int, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05):
-		def _helper(x):
-			return 0 if x < 0 else x
-		print(GET_CUR_TIME("Computing bam coverage and nucleotides content"))
-		#if end - start > 200000:
-		#	raise TypeError("the region length should not exceed 200000bp")
-		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
-		values=list(merged_atcgdict.values())
-		diff = list(map(lambda x: ( _helper((x[0][3]/(x[0][0]+x[0][3])) - (x[1][3]/(x[1][0]+x[1][3]))) if (x[0][0]+x[0][3] > 0 and x[1][0]+x[1][3] > 0) else 0, _helper((x[0][2]/(x[0][1]+x[0][2]) - (x[1][2]/(x[1][1]+x[1][2])))) if (x[0][1]+x[0][2] > 0 and x[1][1]+x[1][2] > 0) else 0) if x[0][4] > 5 and x[1][4] > 5 else 0, values))
-		res = list(map(lambda x: (stats.fisher_exact([[x[0][3], x[1][3]],[x[0][0], x[1][0]]], "greater"), stats.fisher_exact([[x[0][2], x[1][2]],[x[0][1], x[1][1]]], "greater")), values))
-		odds_f, pval_f, odds_r, pval_r = np.array(list(map(lambda x:x[0], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[0], map(lambda x:x[1],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[1],res))))
-		with np.errstate(invalid='ignore'):
-			return list(merged_atcgdict.keys()), list(map(lambda y: (y[0][4],y[1][4]), merged_atcgdict.values())), ((odds_f > threshold) & (pval_f < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][0]/x[1][4] > content_threshold, values))))) | ((odds_r > threshold) & (pval_r < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][1]/x[1][4] > content_threshold, values))))), list(map(lambda x:max(x) if type(x) == tuple else x, diff))
-
 	def compute_nucleotides_coverage(self,reference_id, start:int, end:int, threshold=2):
+		"""
+		compute nucleotides coverage in a certain region. Do not call editing events.
+		"""
 		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
 		values=list(merged_atcgdict.values())
 		return list(zip(list(merged_atcgdict.keys()), list(map(lambda x:x[0], values)), list(map(lambda x:x[1], values))))
 
-	def run_editing_percentage(self, call_editing_sites=False):
+	def write_editing_events(fd, chrom, data):
+		for i in data:
+			for j in i:
+				conc = list(map(str,j[1:]))
+				f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+
+	def write_nucleotides_percentage(fd, chrom, data):
+		for i in data:
+			for j in i:
+				conc = list(map(str,j[1:]))
+				fd.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")		
+		
+
+	def run_editing_percentage(self, out_prefix, contig=None, g_zip=False):
+		if contig:
+			if type(contig) == str:
+				contig = [contig]
 		result_dict = dict.fromkeys(self._chrom_sizes.keys(),list())
-		for chrom,length in self._chrom_sizes.items():
-			print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-			for i in tqdm.trange(0,length,self.frame_size):
-				result_dict[chrom] = result_dict[chrom] + self.compute_nucleotides_coverage(chrom, i, i+self.frame_size)
-				break
-			break
-		return result_dict
+		f =  gzip.open(out_prefix + ".txt.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
+		if contig:
+			for chrom,length in self._chrom_sizes.items():
+				if chrom in contig:
+					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+					for i in tqdm.trange(0,length,self.frame_size):
+						for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+							conc = list(map(str,j[1:]))
+							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+		else:
+			for chrom,length in self._chrom_sizes.items():
+				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+				for i in tqdm.trange(0,length,self.frame_size):
+					for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+						conc = list(map(str,j[1:]))
+						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+		f.close()
 
-	def run(self):
+	def run(self, out_prefix, g_zip=False, contig=None):
+		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
+		if contig:
+			if type(contig) == str:
+				contig = [contig]
+		if contig:
+			for chrom,length in self._chrom_sizes.items():
+				if chrom in contig:
+					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+					for i in tqdm.trange(0,length,self.frame_size):
+						for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+							conc = list(map(str,j[1:]))
+							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+		else:
+			for chrom,length in self._chrom_sizes.items():
+				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+				for i in tqdm.trange(0,length,self.frame_size):
+					for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+						conc = list(map(str,j[1:]))
+						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+		f.close()
+
+	def run_par(self, out_prefix, g_zip=False, contig=None, n_thread=12):
+		pass
+
+	def run_editing_percentage_par(self, out_prefix, contig=None, g_zip=False, n_thread=12):
+		if contig:
+			if type(contig) == str:
+				contig = [contig]
 		result_dict = dict.fromkeys(self._chrom_sizes.keys(),list())
-		for chrom,length in self._chrom_sizes.items():
-			print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-			for i in tqdm.trange(0,length,self.frame_size):
-				result_dict[chrom] = result_dict[chrom] + self.call_editing_region(chrom, i, i+self.frame_size)
-				break
-			break
-		return result_dict
-
-	def run_par(self):
-		result_dict = dict.fromkeys(self._chrom_sizes.keys(),list())
-		for chrom,length in self._chrom_sizes.items():
-			print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-			for i in tqdm.trange(0,length,self.frame_size):
-				result_dict[chrom] = result_dict[chrom] + self.call_editing_region_par(chrom, i, i+self.frame_size)
-		return result_dict
-
-	def __call__(self):
-		return self.run()
-
-	
+		f =  gzip.open(out_prefix + ".txt.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
+		if contig:
+			for chrom,length in self._chrom_sizes.items():
+				if chrom in contig:
+					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+					for i in tqdm.trange(0,length,self.frame_size):
+						for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+							conc = list(map(str,j[1:]))
+							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+		else:
+			for chrom,length in self._chrom_sizes.items():
+				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+				for i in tqdm.trange(0,length,self.frame_size):
+					for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
+						conc = list(map(str,j[1:]))
+						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+		f.close()

@@ -34,7 +34,6 @@ def plot_editing_sites(target_path:str,
 		region,perc,edi=TEC.compute_region_as_percentage(chr_,start,end,call_editing_sites=True)
 	else:
 		region,perc=TEC.compute_region_as_percentage(chr_,start,end)
-	print(edi)
 	fig,(ax1,ax2)=plt.subplots(2,1,figsize=(16,6))
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	ax1.set_xbound(region[0],region[-1]+1)
@@ -98,7 +97,7 @@ def plot_editing_region(target_path:str,
 	else:
 		raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
 	print(GET_CUR_TIME("Computing coverage and editing sites"))
-	reg, cov, edi, diff = TEC.call_editing_region_coverage(chr_,start,end)
+	reg, cov, edi_f, edi_r, diff = TEC.call_editing_region_coverage(chr_,start,end)
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	print(GET_CUR_TIME("Plotting coverage and editing sites"))
 	gs = gridspec.GridSpec(5, 1, height_ratios=[3,.5,1,.5,.5]) 
@@ -111,7 +110,8 @@ def plot_editing_region(target_path:str,
 	y_min = make_gene_elements(result,1,ax1)
 	ax2.bar(height=list(map(lambda x:x[0],cov)),x=reg)
 	ax5.bar(height=list(map(lambda x:x[1],cov)),x=reg,color="#FDBE84")
-	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi)), marker='^',color='red')
+	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_f)), marker='$+$',color='red',s=3)
+	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_r)), marker='$-$',color='blue',s=3)
 	ax4.bar(x=reg,height=diff)
 	#sns.kdeplot(reg,diff,ax=ax4)
 	for i in ["left","top","right"]:

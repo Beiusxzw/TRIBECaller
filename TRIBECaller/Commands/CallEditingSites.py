@@ -5,12 +5,9 @@
 from TRIBECaller.TribeCaller import *
 
 
-def call_editing_sites(target_path:str,control_path:str,out_prefix:str):
+def call_editing_sites(target_path:str,control_path:str,out_prefix:str,g_zip:bool, contig=None):
 	TEC = TribeCaller(target_path,control_path)
-	result = TEC()
-	res = []
-	with open(out_prefix + ".bed", "w+") as f:
-		for k,v in result.items():
-			for j in v:
-				conc = list(map(str,j[1:]))
-				f.write("\t".join([k] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+	if contig:
+		TEC.run(out_prefix, contig=contig,g_zip=g_zip)
+	else:
+		TEC.run(out_prefix,g_zip=g_zip)

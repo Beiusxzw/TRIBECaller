@@ -39,13 +39,14 @@ def PRINT_PRELOGUE():
     print("")
     print("Welcome to")
 
-def PRINT_LOGO():
-    print(GET_RED(""" _____  __   _____  ___    __  ___      _ _   """))
-    print(GET_BLUE("""/__   \\/__\\  \\_   \\/ __\\  /__\\/ __\\__ _| | | ___ _ __ """))
-    print(GET_YELLOW("""  / /\\/ \\//   / /\\/__\\// /_\\ / /  / _` | | |/ _ \\ '__|"""))
-    print(GET_GREEN(""" / / / _  \\/\\/ /_/ \\/  \\//__/ /__| (_| | | |  __/ |   """))
-    print(GET_PURPLE(""" \\/  \\/ \\_/\\____/\\_____/\\__/\\____/\\__,_|_|_|\\___|_| """))
-    print("")                                       
+def PRINT_LOGO():                                     
+
+    print(GET_RED(" _____ ___ ___ ___ ___ ___      _ _         "))
+    print(GET_GREEN("|_   _| _ \\_ _| _ ) __/ __|__ _| | |___ _ _ "))
+    print(GET_YELLOW("  | | |   /| || _ \\ _| (__/ _` | | / -_) '_|"))
+    print(GET_JASPER("  |_| |_|_\\___|___/___\\___\\__,_|_|_\\___|_|  "))
+
+    print("")
 
 def PRINT_INFO():
     print("Version: " + __version__ + ", Written by Snow")

@@ -8,7 +8,7 @@
 # Author: Ziwei Xue
 #
 
-from pathos.multiprocessing import Pool
+#from pathos.multiprocessing import Pool
 from multiprocessing import Process, Manager, Queue
 import time
 
