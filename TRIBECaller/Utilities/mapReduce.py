@@ -13,12 +13,12 @@ from multiprocessing import Process, Manager, Queue
 import time
 
 class MapReduce(object):
-	def __init__(self,  map_func, reduce_func, chunk_size, num_workers=1):
+	def __init__(self,  map_func, reduce_func, pool=None, chunk_size=None, num_workers=12):
 		super(MapReduce, self).__init__()
 		self.map_func = map_func
 		self.reduce_func = reduce_func
 		self.chunk_size = chunk_size
-		self.Pool = Pool(num_workers)
+		self.Pool = pool
 
 	def partition(self, iterable):
 		print("total length: {}".format(len(iterable)))
@@ -36,25 +36,24 @@ class MapReduce(object):
 		else:
 			return self.map_func(iterable)
 
-	def par_map_reduce(self, iterable):
+	def par_map_reduce(self, iterable, partition=False):
 		"""
 		parallel implementation of mapReduce using map method from multiprocessing.Pool
 		@args iterable to be mapped
 		@returns the reduce result of the input iterable
 		"""
-		iterable = self.partition(iterable)
-		print("partition: {}".format(len(iterable)))
+		if partition:
+			iterable = self.partition(iterable)
 		start = time.time()
 		result = self.Pool.map(self.map_func, iterable)
-		print("Pool maped: {}".format(time.time()-start))
 		return self.reduce_func(result)
 
 	def map_func_wrap(self, procnum, return_dict, *args):
 		return_dict[procnum] = self.map_func(*args)
 
-	def proc_map_reduce(self, iterable):
-		iterable = list(self.partition(iterable))
-		print("partition: {}".format(len(iterable)))
+	def proc_map_reduce(self, iterable, partition=False):
+		if partition:
+			iterable = self.partition(iterable)
 		manager = Manager()
 		return_dict = manager.dict()
 		proc_queue = []
@@ -70,3 +69,19 @@ class MapReduce(object):
 				time.sleep(1)
 			else:
 				return self.reduce_func(return_dict.values())
+
+class ThreadDataList(list):
+	def __init__(self, n_threads=12):
+		self.n_threads = n_threads
+		self._count = 0
+		super(ThreadDataList, self)
+
+	def append(self,*args,**kwargs):
+		if self._count >= self.n_threads:
+			raise ValueError("Maximum threads exceeds")
+		self._count += 1
+		super().append(*args,**kwargs)
+
+	def clear(self):
+		self._count = 0
+		super().clear()

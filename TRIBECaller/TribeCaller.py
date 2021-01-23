@@ -110,16 +110,22 @@ class TribeCaller(object):
 		with np.errstate(invalid='ignore'):
 			return list(merged_atcgdict.keys()), list(map(lambda y: (y[0][4],y[1][4]), merged_atcgdict.values())), ((odds_f > threshold) & (pval_f < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][0]/x[1][4] > content_threshold, values))))), ((odds_r > threshold) & (pval_r < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][1]/x[1][4] > content_threshold, values))))), list(map(lambda x:max(x) if type(x) == tuple else x, diff))
 
-	def call_editing_region(self,reference_id, start:int, end:int, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, complex=True):
+	def call_editing_region(self,reference_id, start:int, end:int, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, output_complex=True):
 		"""
 		call editing events in a certain region
 		"""
 		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
+		return self.call_editing_region_wrap(merged_atcgdict, threshold, content_threshold, pvalue_cutoff, output_complex)
+
+	def call_editing_region_wrap(self, merged_atcgdict, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, output_complex=True):
+		"""
+		parallel implementation of calling editing events in a certain region
+		"""
 		values=list(merged_atcgdict.values())
 		diff = list(map(lambda x: ((x[0][3]/(x[0][0]+x[0][3])) - (x[1][3]/(x[1][0]+x[1][3])) if (x[0][0]+x[0][3] > 0 and x[1][0]+x[1][3] > 0) else None, (x[0][2]/(x[0][1]+x[0][2]) - (x[1][2]/(x[1][1]+x[1][2]))) if (x[0][1]+x[0][2] > 0 and x[1][1]+x[1][2] > 0) else None ), values))
 		res = list(map(lambda x: (stats.fisher_exact([[x[0][3], x[1][3]],[x[0][0], x[1][0]]], "greater"), stats.fisher_exact([[x[0][2], x[1][2]],[x[0][1], x[1][1]]], "greater")), values))
 		odds_f, pval_f, odds_r, pval_r = np.array(list(map(lambda x:x[0], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[0],res)))),np.array(list(map(lambda x:x[0], map(lambda x:x[1],res)))),np.array(list(map(lambda x:x[1], map(lambda x:x[1],res))))
-		if complex:
+		if output_complex:
 			out = []
 			for x in range(len(res)):
 				if (odds_f[x] > threshold and pval_f[x] < pvalue_cutoff and values[x][1][0]/values[x][1][4] > content_threshold):
@@ -136,26 +142,83 @@ class TribeCaller(object):
 					out.append((list(merged_atcgdict.keys())[x],diff[x][1],pval_r[x],'-'))
 			return out
 
-	def compute_nucleotides_coverage(self,reference_id, start:int, end:int, threshold=2):
+	def compute_nucleotides_coverage(self,reference_id, start:int, end:int):
 		"""
 		compute nucleotides coverage in a certain region. Do not call editing events.
 		"""
 		merged_atcgdict = self.compute_atcg_content(reference_id, start, end)
+		return self.compute_nucleotides_coverage_wrap(merged_atcgdict)
+
+	def compute_nucleotides_coverage_wrap(self, merged_atcgdict):
+		"""
+		Parallel implementation for computing nucleotides coverage in a certain region. Do not call editing events.
+		"""
 		values=list(merged_atcgdict.values())
 		return list(zip(list(merged_atcgdict.keys()), list(map(lambda x:x[0], values)), list(map(lambda x:x[1], values))))
 
-	def write_editing_events(fd, chrom, data):
+	def write_editing_events(self, fd, chrom, data):
 		for i in data:
 			for j in i:
 				conc = list(map(str,j[1:]))
-				f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+				fd.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
 
-	def write_nucleotides_percentage(fd, chrom, data):
+	def write_nucleotides_percentage(self, fd, chrom, data):
 		for i in data:
 			for j in i:
 				conc = list(map(str,j[1:]))
 				fd.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")		
 		
+
+	def run(self, out_prefix, g_zip=False, contig=None):
+		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
+		if contig:
+			if type(contig) == str:
+				contig = [contig]
+		if contig:
+			for chrom,length in self._chrom_sizes.items():
+				if chrom in contig:
+					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+					for i in tqdm.trange(0,length,self.frame_size):
+						for j in self.call_editing_region(chrom, i, i+self.frame_size):
+							conc = list(map(str,j[1:]))
+							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+		else:
+			for chrom,length in self._chrom_sizes.items():
+				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+				for i in tqdm.trange(0,length,self.frame_size):
+					for j in self.call_editing_region(chrom, i, i+self.frame_size):
+						conc = list(map(str,j[1:]))
+						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
+		f.close()
+
+	def run_par(self, out_prefix, g_zip=False, contig=None, n_threads=12):
+		print(n_threads)
+		map_reduce = MapReduce(map_func=self.call_editing_region_wrap, reduce_func= None, num_workers = n_threads)
+		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".bed", "w+")
+		if contig:
+			if type(contig) == str:
+				contig = [contig]
+		temp_data = ThreadDataList(n_threads)
+		if contig:
+			for chrom,length in self._chrom_sizes.items():
+				if chrom in contig:
+					map_reduce.reduce_func = partial(self.write_editing_events, f, chrom)
+					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+					for i in tqdm.trange(0,length,self.frame_size*n_threads):
+						for j in range(i, i + self.frame_size * n_threads, self.frame_size):
+							temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
+						map_reduce.proc_map_reduce(temp_data)
+						temp_data.clear()
+
+		else:
+			for chrom,length in self._chrom_sizes.items():
+				map_reduce.reduce_func = partial(self.write_editing_events, f, chrom)
+				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
+				for i in tqdm.trange(0,length,self.frame_size*n_threads):
+					for j in range(i, i + self.frame_size * n_threads, self.frame_size):
+						temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
+					map_reduce.proc_map_reduce(temp_data)
+					temp_data.clear()
 
 	def run_editing_percentage(self, out_prefix, contig=None, g_zip=False):
 		if contig:
@@ -180,32 +243,9 @@ class TribeCaller(object):
 						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
 		f.close()
 
-	def run(self, out_prefix, g_zip=False, contig=None):
-		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
-		if contig:
-			if type(contig) == str:
-				contig = [contig]
-		if contig:
-			for chrom,length in self._chrom_sizes.items():
-				if chrom in contig:
-					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-					for i in tqdm.trange(0,length,self.frame_size):
-						for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
-							conc = list(map(str,j[1:]))
-							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
-		else:
-			for chrom,length in self._chrom_sizes.items():
-				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-				for i in tqdm.trange(0,length,self.frame_size):
-					for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
-						conc = list(map(str,j[1:]))
-						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
-		f.close()
-
-	def run_par(self, out_prefix, g_zip=False, contig=None, n_thread=12):
-		pass
-
-	def run_editing_percentage_par(self, out_prefix, contig=None, g_zip=False, n_thread=12):
+	def run_editing_percentage_par(self, out_prefix, contig=None, g_zip=False, n_threads=12):
+		map_reduce = MapReduce(map_func=self.compute_nucleotides_coverage_wrap, reduce_func= None, num_workers = n_threads)
+		temp_data = ThreadDataList(n_threads)
 		if contig:
 			if type(contig) == str:
 				contig = [contig]
@@ -213,17 +253,22 @@ class TribeCaller(object):
 		f =  gzip.open(out_prefix + ".txt.gz", "wt") if g_zip else open(out_prefix + ".txt", "w+")
 		if contig:
 			for chrom,length in self._chrom_sizes.items():
+				map_reduce.reduce_func = partial(self.write_nucleotides_percentage, f, chrom)
 				if chrom in contig:
 					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-					for i in tqdm.trange(0,length,self.frame_size):
-						for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
-							conc = list(map(str,j[1:]))
-							f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+					for i in tqdm.trange(0,length,self.frame_size*n_threads):
+						for j in range(i, i + self.frame_size * n_threads, self.frame_size):
+							temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
+						map_reduce.proc_map_reduce(temp_data)
+						temp_data.clear()
+
 		else:
 			for chrom,length in self._chrom_sizes.items():
+				map_reduce.reduce_func = partial(self.write_nucleotides_percentage, f, chrom)
 				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-				for i in tqdm.trange(0,length,self.frame_size):
-					for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size):
-						conc = list(map(str,j[1:]))
-						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
+				for i in tqdm.trange(0,length,self.frame_size*n_threads):
+					for j in range(i, i + self.frame_size * n_threads, self.frame_size):
+						temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
+					map_reduce.proc_map_reduce(temp_data)
+					temp_data.clear()
 		f.close()
