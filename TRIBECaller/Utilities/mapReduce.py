@@ -15,6 +15,14 @@ import time
 class MapReduce(object):
 	def __init__(self,  map_func, reduce_func, pool=None, chunk_size=None, num_workers=12):
 		super(MapReduce, self).__init__()
+		"""
+		class MapReduce: implementation of parallel computation using map-reduce
+		@args map_func: map function for map-reduce. The function maps an iterable object and returns a mapped list
+		@args reduce_func: reduce function for map-reduce. The function reduces the mapped iterable and returns the final result
+		@args pool: optional. Possibly Pool from multiprocessing module or pathos.multiprocessing
+		@args chunk_size: chunk size for the partition of the list, if provided
+		@args num_workers: number of threads to use
+		"""
 		self.map_func = map_func
 		self.reduce_func = reduce_func
 		self.chunk_size = chunk_size
@@ -38,7 +46,7 @@ class MapReduce(object):
 
 	def par_map_reduce(self, iterable, partition=False):
 		"""
-		parallel implementation of mapReduce using map method from multiprocessing.Pool
+		Parallel implementation of mapReduce using map method from multiprocessing.Pool
 		@args iterable to be mapped
 		@returns the reduce result of the input iterable
 		"""
@@ -49,9 +57,15 @@ class MapReduce(object):
 		return self.reduce_func(result)
 
 	def map_func_wrap(self, procnum, return_dict, *args):
+		"""
+		Wrapper for the map function. A return_dict should be referenced such that the result will be temporally saved
+		"""
 		return_dict[procnum] = self.map_func(*args)
 
 	def proc_map_reduce(self, iterable, partition=False):
+		"""
+		Parallel implementation of mapReduce using multiprocessing.Process
+		"""
 		if partition:
 			iterable = self.partition(iterable)
 		manager = Manager()
@@ -69,6 +83,29 @@ class MapReduce(object):
 				time.sleep(1)
 			else:
 				return self.reduce_func(return_dict.values())
+
+	def proc_map(self, iterable, partition=False):
+		"""
+		No reduce
+		"""
+		if partition:
+			iterable = self.partition(iterable)
+		manager = Manager()
+		return_dict = manager.dict()
+		proc_queue = []
+		for proc,i in enumerate(iterable):
+			p = Process(target=self.map_func_wrap, args=(proc, return_dict,i))
+			p.Daemon = True
+			p.start()
+			proc_queue.append(p)
+		for p in proc_queue:
+			p.join()
+		while True:
+			if any(proc.is_alive() for proc in proc_queue):
+				time.sleep(1)
+			else:
+				return list(return_dict.values())
+
 
 class ThreadDataList(list):
 	def __init__(self, n_threads=12):

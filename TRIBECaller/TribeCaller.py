@@ -28,7 +28,7 @@ from functools import partial
 class TribeCaller(object):
 	def __init__(self, target_reads_path:str, 
 				 control_reads_path:str, 
-				 frame_size:int = 600000, 
+				 frame_size:int = 500000, 
 				 bin_size:int = 1,
 				 num_threads:int=1,
 				 run_async: bool = False):
@@ -55,6 +55,14 @@ class TribeCaller(object):
 		target_atcgdict =  self.target.build_atcg_dict(reference_id, start, end, self.bin_size)
 		control_atcgdict = self.control.build_atcg_dict(reference_id, start, end, self.bin_size)
 		return target_atcgdict.merge(control_atcgdict, lambda x,y:(x,y))
+
+	def compute_atcg_content_par(self, reference_id, start_end_list):
+		target_atcgdict =  self.target.build_atcg_dict_par(reference_id, start_end_list, self.bin_size)
+		result = []
+		control_atcgdict = self.control.build_atcg_dict_par(reference_id, start_end_list, self.bin_size)
+		for i in  zip(target_atcgdict, control_atcgdict):
+			result.append(i[0].merge(i[1], lambda x,y:(x,y)))
+		return result
 
 	def compute_region_as_percentage(self,reference_id,start:int,end:int=None, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05,diff_cutoff=None,call_editing_sites=False):
 		"""
@@ -192,7 +200,7 @@ class TribeCaller(object):
 		f.close()
 
 	def run_par(self, out_prefix, g_zip=False, contig=None, n_threads=12):
-		print(n_threads)
+		print(GET_CUR_TIME("Running program using " + GET_BLUE("{} threads".format(n_threads))))
 		map_reduce = MapReduce(map_func=self.call_editing_region_wrap, reduce_func= None, num_workers = n_threads)
 		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".bed", "w+")
 		if contig:
@@ -206,8 +214,9 @@ class TribeCaller(object):
 					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
 					for i in tqdm.trange(0,length,self.frame_size*n_threads):
 						for j in range(i, i + self.frame_size * n_threads, self.frame_size):
-							temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
-						map_reduce.proc_map_reduce(temp_data)
+							if j + self.frame_size <= length:
+								temp_data.append((j,j+self.frame_size))
+						map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data))
 						temp_data.clear()
 
 		else:
@@ -216,8 +225,9 @@ class TribeCaller(object):
 				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
 				for i in tqdm.trange(0,length,self.frame_size*n_threads):
 					for j in range(i, i + self.frame_size * n_threads, self.frame_size):
-						temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
-					map_reduce.proc_map_reduce(temp_data)
+						if j + self.frame_size <= length:
+							temp_data.append((j,j+self.frame_size))
+					map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data))
 					temp_data.clear()
 
 	def run_editing_percentage(self, out_prefix, contig=None, g_zip=False):
@@ -256,10 +266,11 @@ class TribeCaller(object):
 				map_reduce.reduce_func = partial(self.write_nucleotides_percentage, f, chrom)
 				if chrom in contig:
 					print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
-					for i in tqdm.trange(0,length,self.frame_size*n_threads):
+					for i in tqdm.trange(0,length,self.frame_size * n_threads):
 						for j in range(i, i + self.frame_size * n_threads, self.frame_size):
-							temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
-						map_reduce.proc_map_reduce(temp_data)
+							if j + self.frame_size <= length:
+								temp_data.append((j,j+self.frame_size))
+						map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom,temp_data))
 						temp_data.clear()
 
 		else:
@@ -268,7 +279,8 @@ class TribeCaller(object):
 				print(GET_CUR_TIME("Start analysing " + GET_BLUE("chromosome {}".format(chrom))))
 				for i in tqdm.trange(0,length,self.frame_size*n_threads):
 					for j in range(i, i + self.frame_size * n_threads, self.frame_size):
-						temp_data.append(self.compute_atcg_content(chrom, i, i + self.frame_size))
-					map_reduce.proc_map_reduce(temp_data)
+						if j + self.frame_size <= length:
+							temp_data.append((j,j+self.frame_size))
+					map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom,temp_data))
 					temp_data.clear()
 		f.close()

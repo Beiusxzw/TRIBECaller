@@ -92,29 +92,6 @@ class TribeReads(object):
 	def build_nucleotides_dict_par(self, reference_id, start:int, end:int, bin_size = 1):
 		raise NotImplementedError("This method has not been implemented")
 
-	def build_as_dict(self, reference_id, start:int, end:int, bin_size = 1):
-		"""
-		Build a ASDict according to reads in a genomic region with certain bin size
-		@args reference_id: The reference id of the contig. Can be a integer flag from the pysam or
-							the real chromosome string, such as "chr1"
-		@args start: the start of the position of the chromosome where reads will be mapped
-		@args end: the end of the position of the chromosome where reads will be mapped
-		@args bin_size: window of the computed A-(G/C) content 
-		@returns An ASDict that contains information of the A-(G/C) content
-		"""
-		reference_id = self.get_reference_id(reference_id)
-		reads = self.get_reads(reference_id, start, end)
-		as_dict = ASDict(reference_id, bin_size)
-		for i in reads:
-			as_dict(i)
-		return as_dict
-
-	def build_as_dict_par(self, reference_id, start:int, end:int, bin_size = 1):
-		reference_id = self.get_reference_id(reference_id)
-		reads = self.get_reads(reference_id, start, end)
-		mr = MapReduce(partial(self.map_func,reference_id,bin_size), self.reduce_func, self.chunk_size, self.num_workers)
-		return mr.proc_map_reduce(reads)
-		
 	def build_atcg_dict(self, reference_id, start:int, end:int, bin_size = 1):
 		reference_id = self.get_reference_id(reference_id)
 		reads = self.get_reads(reference_id, start, end)
@@ -123,8 +100,21 @@ class TribeReads(object):
 			atcg_dict(i)
 		return atcg_dict
 	
-	def build_atcg_dict_par(self, reference_id, start:int, end:int, bin_size = 1):
-		raise NotImplementedError("This method has not been implemented")
+	def build_atcg_dict_par_func(self, reference_id, bin_size, reads):
+		atcg_dict = ATCGDictPar(reference_id, bin_size)
+		for i in reads:
+			atcg_dict(i)
+		return atcg_dict
+
+	def build_atcg_dict_par(self, reference_id, start_end_list, bin_size = 1, n_threads = 12):
+		reference_id = self.get_reference_id(reference_id)
+		reads_list = ThreadDataList(n_threads)
+		map_func = partial(self.build_atcg_dict_par_func, reference_id, bin_size)
+		map_reduce = MapReduce(map_func=map_func, reduce_func=None, num_workers = n_threads)
+		for i in start_end_list:
+			reads_list.append(self.get_reads(reference_id, i[0], i[1]))
+		return map_reduce.proc_map(reads_list)
+
 
 	def get_chrom_size(self, reference_id):
 		if type(reference_id) == int:

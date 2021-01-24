@@ -84,7 +84,7 @@ class ATCGDict(TribeDict):
 				mvalue = (prev_val[0], prev_val[1], prev_val[2], prev_val[3], prev_val[4]+1)
 			super().__setitem__(mkey, mvalue)
 
-class ASDictPar:
+class ATCGDictPar:
 	def __init__(self, chrom, bin_size):
 		self._chrom = chrom
 		self.bin_size = bin_size
@@ -93,8 +93,8 @@ class ASDictPar:
 	def merge(self, d2, merge):
 	    result = dict()
 	    for k,v in self._dict.items():
-	        if k in d2:
-	            result[k] = merge(v,d2[k])
+	        if k in d2._dict.keys():
+	            result[k] = merge(v,d2._dict[k])
 	    return result
 
 	def __call__(self, reads):
@@ -104,23 +104,28 @@ class ASDictPar:
 	def setitem(self, d, key, value):
 		mkey = ROUND_DOWN(key, self.bin_size) if self.bin_size != 1 else key
 		if mkey not in self._dict.keys():
-			if value == 'C' or value == 'G':
-				d.__setitem__(mkey, (0, 1, 1))
-			elif value == 'A':
-				d.__setitem__(mkey, (1, 0, 1))
+			if value == 'A':
+				self._dict.__setitem__(mkey, (1, 0, 0, 0, 1))
+			elif value == 'T':
+				self._dict.__setitem__(mkey, (0, 1, 0, 0, 1))
+			elif value == 'C':
+				self._dict.__setitem__(mkey, (0, 0, 1, 0, 1))
+			elif value == 'G':
+				self._dict.__setitem__(mkey, (0, 0, 0, 1, 1))
 			else:
-				d.__setitem__(mkey, (0, 0, 1))
+				self._dict.__setitem__(mkey, (0, 0, 0, 0, 1))
 		else:
 			prev_val = self._dict.__getitem__(mkey)
-			if value == 'C' or value == 'G':
-				# mvalue = (prev_val[0]*(prev_val[2]/(prev_val[2]+1)), ((prev_val[1] * prev_val[2] + 1)/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0], prev_val[1] + 1, prev_val[2]+1)
-			elif value == 'A':
-				# mvalue = (((prev_val[0] * prev_val[2] + 1)/(prev_val[2]+1)), prev_val[1]*(prev_val[2]/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0] + 1, prev_val[1], prev_val[2]+1)
+			if value == 'A':
+				mvalue = (prev_val[0]+1, prev_val[1], prev_val[2], prev_val[3], prev_val[4]+1)
+			elif value == 'T':
+				mvalue = (prev_val[0], prev_val[1]+1, prev_val[2], prev_val[3], prev_val[4]+1)
+			elif value == 'C':
+				mvalue = (prev_val[0], prev_val[1], prev_val[2]+1, prev_val[3], prev_val[4]+1)
+			elif value == 'G':
+				mvalue = (prev_val[0], prev_val[1], prev_val[2], prev_val[3]+1, prev_val[4]+1)
 			else:
-				#mvalue = (prev_val[0]*(prev_val[2]/(prev_val[2]+1)), prev_val[1]*(prev_val[2]/(prev_val[2]+1)), prev_val[2]+1)
-				mvalue = (prev_val[0], prev_val[1], prev_val[2]+1)
+				mvalue = (prev_val[0], prev_val[1], prev_val[2], prev_val[3], prev_val[4]+1)
 			d.__setitem__(mkey, mvalue)
 
 	def items(self):
