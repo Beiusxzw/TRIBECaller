@@ -18,6 +18,7 @@ def make_gene_elements(gene_gtfs, y_pos, ax):
 	pos_dict = {}
 	ga_esti = (int(gene_gtfs[-1][GtfReads.Flag.End]) - int(gene_gtfs[0][GtfReads.Flag.Start])) // 10
 	for i in gene_gtfs:
+		mark = '$>$' if i[GtfReads.Flag.Strand] == '+' else '$<$'
 		if i[GtfReads.Flag.Feature] == "transcript":
 			# The while loop is to calculate the y-position of each transcripts. 
 			# If there is no overlap between two transcripts in the same level, 
@@ -34,11 +35,10 @@ def make_gene_elements(gene_gtfs, y_pos, ax):
 					pos_dict[y_pos] = (int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 			else:
 				pos_dict[y_pos] = (int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
-			mark = '$>$' if i[GtfReads.Flag.Strand] == '+' else '$<$'
 			gene_length = int(i[GtfReads.Flag.End]) - int(i[GtfReads.Flag.Start])
 			cur_end = int(i[GtfReads.Flag.End])
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]), ga_esti)
-			line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#1D00C2",linewidth=2)
+			line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#1D00C2",mew=0,lw=.5,ms=5,mfc="#1D00C2")
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 			line = ax.plot(x, [y_pos] * len(x), linewidth=1,color="#1D00C2")
 			ax.text(int(i[GtfReads.Flag.Start]), y_pos-0.1, i[GtfReads.Flag.Attribute]["gene_name"], fontfamily="Arial", fontsize=4)

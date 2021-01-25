@@ -106,7 +106,7 @@ class TribeReads(object):
 			atcg_dict(i)
 		return atcg_dict
 
-	def build_atcg_dict_par(self, reference_id, start_end_list, bin_size = 1, n_threads = 12):
+	def build_atcg_dict_par(self, reference_id, start_end_list, n_threads, bin_size = 1):
 		reference_id = self.get_reference_id(reference_id)
 		reads_list = ThreadDataList(n_threads)
 		map_func = partial(self.build_atcg_dict_par_func, reference_id, bin_size)

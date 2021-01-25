@@ -126,16 +126,16 @@ def IS_PAIRED_FIRST(r:pysam.libcalignedsegment.AlignedSegment):
     return True if the pysam.libcalignedsegment.AlignedSegment is Read-First-in-Pair
     return False if the pysam.libcalignedsegment.AlignedSegment is not Read-First-in-Pair or the read do not come from pair-ended library
     """
-    # return r.flag & 0b10000000
-    return r.flag in SAM_FLAGS["FP"]
+    return r.flag & 0b01000000
+    # return r.flag in SAM_FLAGS["FP"]
 
 def IS_PAIRED_SECOND(r:pysam.libcalignedsegment.AlignedSegment):
     """
     return True if the pysam.libcalignedsegment.AlignedSegment is Read-Second-in-Pair
     return False if the pysam.libcalignedsegment.AlignedSegment is not Read-Second-in-Pair or the read do not come from pair-ended library
     """
-    # return r.flag & 0b01000000
-    return r.flag in SAM_FLAGS["SP"]
+    return r.flag & 0b10000000
+    # return r.flag in SAM_FLAGS["SP"]
 
 def COMPLEMENT(seq):
     """

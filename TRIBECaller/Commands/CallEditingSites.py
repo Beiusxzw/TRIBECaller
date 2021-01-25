@@ -9,12 +9,12 @@ def call_editing_sites(target_path:str,control_path:str,out_prefix:str,g_zip:boo
 	TEC = TribeCaller(target_path,control_path)
 	if contig:
 		if n_threads:
-			TEC.run_par(out_prefix, contig=contig,g_zip=g_zip)
+			TEC.run_par(out_prefix, contig=contig,g_zip=g_zip,n_threads=n_threads)
 		else:
 			TEC.run(out_prefix, contig=contig,g_zip=g_zip)
 
 	else:
 		if n_threads:
-			TEC.run_par(out_prefix, g_zip=g_zip)
+			TEC.run_par(out_prefix, g_zip=g_zip,n_threads=n_threads)
 		else:
 			TEC.run(out_prefix, g_zip=g_zip)

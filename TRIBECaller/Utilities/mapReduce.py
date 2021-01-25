@@ -108,7 +108,7 @@ class MapReduce(object):
 
 
 class ThreadDataList(list):
-	def __init__(self, n_threads=12):
+	def __init__(self, n_threads):
 		self.n_threads = n_threads
 		self._count = 0
 		super(ThreadDataList, self)

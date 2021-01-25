@@ -56,15 +56,22 @@ class TribeCaller(object):
 		control_atcgdict = self.control.build_atcg_dict(reference_id, start, end, self.bin_size)
 		return target_atcgdict.merge(control_atcgdict, lambda x,y:(x,y))
 
-	def compute_atcg_content_par(self, reference_id, start_end_list):
-		target_atcgdict =  self.target.build_atcg_dict_par(reference_id, start_end_list, self.bin_size)
+	def compute_atcg_content_par(self, reference_id, start_end_list, n_threads):
+		target_atcgdict =  self.target.build_atcg_dict_par(reference_id, start_end_list, n_threads, self.bin_size)
 		result = []
-		control_atcgdict = self.control.build_atcg_dict_par(reference_id, start_end_list, self.bin_size)
+		control_atcgdict = self.control.build_atcg_dict_par(reference_id, start_end_list, n_threads, self.bin_size)
 		for i in  zip(target_atcgdict, control_atcgdict):
 			result.append(i[0].merge(i[1], lambda x,y:(x,y)))
 		return result
 
-	def compute_region_as_percentage(self,reference_id,start:int,end:int=None, threshold=2, content_threshold=0.8,pvalue_cutoff=0.05,diff_cutoff=None,call_editing_sites=False):
+	def compute_region_as_percentage(self,reference_id,
+										  start:int,
+										  end:int=None, 
+										  threshold=2, 
+										  content_threshold=0.8,
+										  pvalue_cutoff=0.05,
+										  diff_cutoff=None,
+										  call_editing_sites=False):
 		"""
 		for use of plotEditingRegion.py
 		compute A,T,C,G content in each nucleotides position
@@ -118,7 +125,13 @@ class TribeCaller(object):
 		with np.errstate(invalid='ignore'):
 			return list(merged_atcgdict.keys()), list(map(lambda y: (y[0][4],y[1][4]), merged_atcgdict.values())), ((odds_f > threshold) & (pval_f < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][0]/x[1][4] > content_threshold, values))))), ((odds_r > threshold) & (pval_r < pvalue_cutoff) & (np.array(list(map(lambda x:x[1][1]/x[1][4] > content_threshold, values))))), list(map(lambda x:max(x) if type(x) == tuple else x, diff))
 
-	def call_editing_region(self,reference_id, start:int, end:int, threshold=2,content_threshold=0.8,pvalue_cutoff=0.05, output_complex=True):
+	def call_editing_region(self, reference_id, 
+								  start:int,
+								  end:int, 
+								  threshold=2,
+								  content_threshold=0.8,
+								  pvalue_cutoff=0.05,
+								  output_complex=True):
 		"""
 		call editing events in a certain region
 		"""
@@ -150,7 +163,7 @@ class TribeCaller(object):
 					out.append((list(merged_atcgdict.keys())[x],diff[x][1],pval_r[x],'-'))
 			return out
 
-	def compute_nucleotides_coverage(self,reference_id, start:int, end:int):
+	def compute_nucleotides_coverage(self, reference_id, start:int, end:int):
 		"""
 		compute nucleotides coverage in a certain region. Do not call editing events.
 		"""
@@ -199,7 +212,7 @@ class TribeCaller(object):
 						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + conc) + "\n")
 		f.close()
 
-	def run_par(self, out_prefix, g_zip=False, contig=None, n_threads=12):
+	def run_par(self, out_prefix, n_threads, g_zip=False, contig=None):
 		print(GET_CUR_TIME("Running program using " + GET_BLUE("{} threads".format(n_threads))))
 		map_reduce = MapReduce(map_func=self.call_editing_region_wrap, reduce_func= None, num_workers = n_threads)
 		f =  gzip.open(out_prefix + ".bed.gz", "wt") if g_zip else open(out_prefix + ".bed", "w+")
@@ -216,7 +229,7 @@ class TribeCaller(object):
 						for j in range(i, i + self.frame_size * n_threads, self.frame_size):
 							if j + self.frame_size <= length:
 								temp_data.append((j,j+self.frame_size))
-						map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data))
+						map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data, n_threads))
 						temp_data.clear()
 
 		else:
@@ -227,7 +240,7 @@ class TribeCaller(object):
 					for j in range(i, i + self.frame_size * n_threads, self.frame_size):
 						if j + self.frame_size <= length:
 							temp_data.append((j,j+self.frame_size))
-					map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data))
+					map_reduce.proc_map_reduce(self.compute_atcg_content_par(chrom, temp_data, n_threads))
 					temp_data.clear()
 
 	def run_editing_percentage(self, out_prefix, contig=None, g_zip=False):
@@ -253,7 +266,7 @@ class TribeCaller(object):
 						f.write("\t".join([chrom] + [str(j[0]),str(j[0]+1)] + list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
 		f.close()
 
-	def run_editing_percentage_par(self, out_prefix, contig=None, g_zip=False, n_threads=12):
+	def run_editing_percentage_par(self, out_prefix,  n_threads, contig=None, g_zip=False):
 		map_reduce = MapReduce(map_func=self.compute_nucleotides_coverage_wrap, reduce_func= None, num_workers = n_threads)
 		temp_data = ThreadDataList(n_threads)
 		if contig:

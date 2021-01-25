@@ -1,61 +1,32 @@
-# -*- coding: utf-8 -*-
+import os
+import shutil
+import sys
+from cx_Freeze import setup, Executable
+from TRIBECaller._version import __version__
 
-import re
+os.environ['TCL_LIBRARY'] = r'C:\bin\Python37-32\tcl\tcl8.6'
+os.environ['TK_LIBRARY'] = r'C:\bin\Python37-32\tcl\tk8.6'
 
-from setuptools import setup, find_packages
-from setuptools.command.sdist import sdist as _sdist
-from setuptools.command.install import install as _install
+__version__ = '1.0.0'
+base = None
+if sys.platform == 'win32':
+    base = 'Win32GUI'
 
-VERSION_PY = """
-# This file is originally generated from Git information by running 'setup.py
-# version'. Distribution tarballs contain a pre-generated copy of this file.
-__version__ = '%s'
-"""
-
-
-def get_version():
-    try:
-        f = open("TRIBECaller/_version.py")
-    except EnvironmentError:
-        return None
-    for line in f.readlines():
-        mo = re.match("__version__ = '([^']+)'", line)
-        if mo:
-            ver = mo.group(1)
-            return ver
-    return None
-
-
-class sdist(_sdist):
-
-    def run(self):
-        self.distribution.metadata.version = get_version()
-        return _sdist.run(self)
-
-
-class install(_install):
-
-    def run(self):
-        self.distribution.metadata.version = get_version()
-        _install.run(self)
-        return
+include_files = []
+includes = ['numpy','scipy','pysam','tqdm']
+excludes = []
+packages = ['numpy']
 
 setup(
     name='TRIBECaller',
-    version=get_version(),
-    author='Ziwei Xue',
-    author_email='xueziweisz@gmail.com',
-    packages=find_packages(),
-    scripts=['bin/CallEditingSites'],
-    include_package_data=True,
-    classifiers=[
-        'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering :: Bio-Informatics'],
-    install_requires=[
-        "numpy >= 1.9.0",
-        "scipy >= 0.17.0",
-        "pysam >= 0.14.0",
-        "tqdm >= 4.36.1"
-    ],
-    entry_points={"console_scripts":["main.py"]}
+    description='TRIBECaller',
+    version=__version__,
+    executables=[Executable('main.py', base=base)],
+    options = {'build_exe': {
+        'packages': packages,
+        'includes': includes,
+        'include_files': include_files,
+        'include_msvcr': True,
+        'excludes': excludes,
+    }},
 )
