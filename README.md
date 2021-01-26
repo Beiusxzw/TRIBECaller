@@ -2,7 +2,21 @@
 
 ![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=NTFkMTBiNDcwNTAxMTAwMGI0NzVlNDRlYWQwNDUzODFfMGg1SG12cVJVZWc5VjB1V1NEcTUyYWFIdHU2djROakVfVG9rZW46Ym94Y25qenprWktTOWZkZG55bG9DdUpGU2plXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
 
-[TOC]
+## Table of Contents
+* **[Project Timeline](#project-timeline)**
+* **[Project Description](#project-description)**
+  * [Background](#background)
+  * [Rationale](#rationale)
+  * [Implementation](#implementation)
+  * [Performance](#performance)
+* **[User Document](#user-document)**
+* **[Subprograms](#subprograms)**
+  * [callEditingSites](#calleditingsites)
+  * [computeCoverage](#computecoverage)
+  * [plotEditingSite](#ploteditingsite)
+  * [plotEditingRegion](#ploteditingregion)
+* **[Release Note](#release-note)**
+* **[Future Plan](#future-plan)**
 
 ## **Project Timeline**
 
@@ -432,7 +446,7 @@ Tfirth row is the read coverage in the control sample
 
 [**2021.1.24]** Multithreading and MapReducing to achieve faster computation.
 
-### **Future Development Plan**
+### **Future Plan**
 
 - Parallel computation of the A(G)T(C) dictionary (Advanced data structure might be used; Try to overcome the GIL)
 - MapReduce mechanism on computing the A(G)T(C) dictionary might be considered.
