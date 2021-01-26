@@ -3,10 +3,6 @@
 # Author: Ziwei Xue
 # Description: Functions and Methods for functional programming
 #
-# -*- coding: utf-8 -*-
-#!/usr/bin/env python
-# Author: Ziwei Xue
-#
 
 #from pathos.multiprocessing import Pool
 from multiprocessing import Process, Manager, Queue

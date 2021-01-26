@@ -7,8 +7,7 @@
 # ------------------------- #
 
 from collections import defaultdict
-import pysam
-
+from pysam import AlignmentFile, AlignedSegment
 
 # Bit-wise flag in sam file format (if set 1):
 # Bit Description
@@ -101,38 +100,38 @@ def MERGE_AS_DICT(d1,d2):
             result[k] = v
     return result
 
-def IS_PAIRED(r:pysam.libcalignedsegment.AlignedSegment):
+def IS_PAIRED(r:AlignedSegment):
     """
-    return True if the pysam.libcalignedsegment.AlignedSegment is a paired-read
+    return True if the AlignedSegment is a paired-read
     """
     return r.flag & 0b10000000 or r.flag & 0b01000000
 
-def IS_EQ_REF_FORWARD(r:pysam.libcalignedsegment.AlignedSegment):
+def IS_EQ_REF_FORWARD(r:AlignedSegment):
     """
-    return True if the read of pysam.libcalignedsegment.AlignedSegment is the same as the forward strand
+    return True if the read of AlignedSegment is the same as the forward strand
     Don't confused with read-forward in the bit-wise flag
     """
     return r.flag in SAM_FLAGS["F"]
 
-def IS_EQ_REF_REVERSE(r:pysam.libcalignedsegment.AlignedSegment):
+def IS_EQ_REF_REVERSE(r:AlignedSegment):
     """
-    return True if the read of pysam.libcalignedsegment.AlignedSegment is is the same as the reverse strand
+    return True if the read of AlignedSegment is is the same as the reverse strand
     Don't confused with read-forward in the bit-wise flag
     """
     return r.flag in SAM_FLAGS["R"]
 
-def IS_PAIRED_FIRST(r:pysam.libcalignedsegment.AlignedSegment):
+def IS_PAIRED_FIRST(r:AlignedSegment):
     """
-    return True if the pysam.libcalignedsegment.AlignedSegment is Read-First-in-Pair
-    return False if the pysam.libcalignedsegment.AlignedSegment is not Read-First-in-Pair or the read do not come from pair-ended library
+    return True if the AlignedSegment is Read-First-in-Pair
+    return False if the AlignedSegment is not Read-First-in-Pair or the read do not come from pair-ended library
     """
     return r.flag & 0b01000000
     # return r.flag in SAM_FLAGS["FP"]
 
-def IS_PAIRED_SECOND(r:pysam.libcalignedsegment.AlignedSegment):
+def IS_PAIRED_SECOND(r:AlignedSegment):
     """
-    return True if the pysam.libcalignedsegment.AlignedSegment is Read-Second-in-Pair
-    return False if the pysam.libcalignedsegment.AlignedSegment is not Read-Second-in-Pair or the read do not come from pair-ended library
+    return True if the AlignedSegment is Read-Second-in-Pair
+    return False if the AlignedSegment is not Read-Second-in-Pair or the read do not come from pair-ended library
     """
     return r.flag & 0b10000000
     # return r.flag in SAM_FLAGS["SP"]
@@ -220,7 +219,7 @@ def GET_WITHOUT_INSERTION(read, rev, clip=False,debug=False):
 
 def GET_FORWARD_SEQUENCE(read):
     """
-    @args an pysam.libcalignedsegment.AlignedSegment object
+    @args an AlignedSegment object
     """
     if not GET_WITHOUT_INSERTION(read, rev = False):
         return None
