@@ -58,11 +58,18 @@ Currently, **TRIBECaller** use fisher's exact test to call RNA editing sites.
 
 Fisher showed that the probability of obtaining any such set of values was given by the hypergeometric distribution:
 
-$$p = \frac{(m+n)!(a+b)!(m+a)!(n+b)!}{m!n!a!b!(m+n+a+b)!}$$, $$\mathrm{odds} = \frac{\frac{n}{m}}{\frac{b}{a}}$$
+$$
+p = \frac{(m+n)!(a+b)!(m+a)!(n+b)!}{m!n!a!b!(m+n+a+b)!}
+$$
+, 
+$$\mathrm{odds} = \frac{\frac{n}{m}}{\frac{b}{a}}
+$$
 
 The program will also output the value of difference of G/C content defined by:
 
-$$\mathrm{diff} = \frac{n}{m+n} - \frac{b}{a+b}$$
+$$
+\mathrm{diff} = \frac{n}{m+n} - \frac{b}{a+b}
+$$
 
 ### Implementation
 
