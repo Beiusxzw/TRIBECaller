@@ -24,7 +24,7 @@ Unable to paste block outside Docs
 
 ## **Project Description**
 
-#### **Background**
+### **Background**
 
 RNA editing are ubiquitous in a wide range of organisms and it is an crucial post-transcriptional mechanism to regulate the function of primary mRNA through insertion, deletion, or modification (editing) of specific nucleotides. RNA editing have long been known to occur in tRNAs, rRNAs, and mRNAs. Two common types of RNA editing involve deamination reaction, either by deamination of cytidine (C) produces uridine (U), or deamination of adenine (A) to inosine (I). In mammals, two adenosine deaminase (ADAR) proteins have been found to catalyzes adenine-to inosine (A-to-I) conversion in dsRNA, without additional factors. The inosine can be then converted to guanosine and paired with cytosine. 
 
@@ -79,7 +79,7 @@ Using mapReduce as our parallel computation model, **TRIBECaller** uses multiple
 
 ![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=ZTM1ODM4YmU3ODU5NmEyMGVlOTZkNTYyZDcyM2ExYWZfdTBEVmM1U1dwamx1ejFQbnJ5M2d2cDI4RVBSUW5mRlpfVG9rZW46Ym94Y25HcHhtSjRRMEI4YzdlbUxzWTFtRmVoXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
 
-#### **Performance**
+### **Performance**
 
 In one test, calling editing events with **TRIBECaller** using an 1.2G experiment bam file and 961M control bam file only costs 120 minutes, using 12 parallel threads, Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz.
 
