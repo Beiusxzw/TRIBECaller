@@ -19,7 +19,6 @@ from TRIBECaller.Utilities.utils import *
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-import seaborn as sns
 
 def plot_editing_sites(target_path:str,
 					   control_path:str,
@@ -113,7 +112,6 @@ def plot_editing_region(target_path:str,
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_f)), marker='$+$',color='red',s=3)
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_r)), marker='$-$',color='blue',s=3)
 	ax4.bar(x=reg,height=diff)
-	#sns.kdeplot(reg,diff,ax=ax4)
 	for i in ["left","top","right"]:
 		ax1.spines[i].set_visible(False)
 		ax2.spines[i].set_visible(False)
