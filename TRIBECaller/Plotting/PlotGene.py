@@ -38,7 +38,7 @@ def make_gene_elements(gene_gtfs, y_pos, ax):
 			gene_length = int(i[GtfReads.Flag.End]) - int(i[GtfReads.Flag.Start])
 			cur_end = int(i[GtfReads.Flag.End])
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]), ga_esti)
-			line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#1D00C2",mew=0,lw=.5,ms=5,mfc="#1D00C2")
+			line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#1D00C2",mew=1,lw=.5,ms=5,mfc="#1D00C2")
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 			line = ax.plot(x, [y_pos] * len(x), linewidth=1,color="#1D00C2")
 			ax.text(int(i[GtfReads.Flag.Start]), y_pos-0.1, i[GtfReads.Flag.Attribute]["gene_name"], fontfamily="Arial", fontsize=4)
