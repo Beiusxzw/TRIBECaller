@@ -8,6 +8,7 @@
 
 from collections import defaultdict
 from pysam import AlignmentFile, AlignedSegment
+from TRIBECaller.Utilities.utils import CLOSEST_INDEX
 
 # Bit-wise flag in sam file format (if set 1):
 # Bit Description
@@ -154,18 +155,50 @@ def REVERSE_COMPLEMENT(s):
 def REVERSE(s):
     return s[::-1]
 
-# IMPLEMENT
-def READ_PAIR(bam, reference_id:str, start:int, end:int):
-    """
-    Generate read without paired information in a BAM file or within a region.
-    @args bam: an pysam.AlignmentFile from pysam module
-    @args reference_id: should be a string of the contig
-    @args start: start position of the fetching
-    @args end: end position of the fetching
-    @returns a generator of all reads
-    """
-    pass
+def READ_PAIR(read1, read2, keep=1):
+    assert(len(read1) == len(read2))
+    if read1[0][0] <= read2[0][0]:
+        if read1[0][-1] >= read2[0][0]:
+            # ----------------------> R1
+            #              <---------------------R 2
+            if keep == 1:
+                try:
+                    index = read2[0].index(read1[0][-1])
+                except:
+                    index = CLOSEST_INDEX(read2[0], read1[0][-1])
+                return (read1, (read2[0][ index :], read2[1][ index :]))
+            else:
+                try:
+                    index = read1[0].index(read2[0][0])
+                except:
+                    index = CLOSEST_INDEX(read1[0], read2[0][0])
+                return ((read1[0][ : index ], read1[1][: index ]), read2)
 
+        else:
+            # ----------------------> R1
+            #                        <---------------------R 2
+            return (read1,read2)
+    else:
+        if read2[0][-1] >= read1[0][0]:
+            #               ----------------------> R1
+            # <---------------------R 2
+            if keep == 1:
+                try:
+                    index = read2[0].index(read1[0][0])
+                except:
+                    index = CLOSEST_INDEX(read2[0], read1[0][0])
+
+                return (read1, (read2[0][: index], read2[1][:index]))
+            else:
+                try:
+                    index = read1[0].index(read1[0][-1])
+                except:
+                    index = CLOSEST_INDEX(read1[0], read1[0][-1])
+                return ((read1[0][index:], read1[1][index:]), read2)
+        else:
+            #                        ----------------------> R1
+            # <---------------------R 2            
+            return (read1,read2)
 
 def READ_PAIR_GENERATOR(bam, reference_id, start:int, end:int):
     """
@@ -175,7 +208,7 @@ def READ_PAIR_GENERATOR(bam, reference_id, start:int, end:int):
     @args reference_id: should be a string of the contig
     @args start: start position of the fetching
     @args end: end position of the fetching
-    @returns a generator of tuple containing paired reads
+    @returns a generator object of tuple containing paired reads
     """
     read_dict = defaultdict(lambda: [None, None])
     for read in bam.fetch(reference_id,start,end):

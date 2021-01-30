@@ -11,7 +11,7 @@ from TRIBECaller.Plotting.PlotNucleotides import *
 from TRIBECaller.Plotting.PlotGene import *
 from TRIBECaller.Utilities.Parsers import parse_region
 from TRIBECaller.Utilities.utils import *
-
+from TRIBECaller.TribeCriteria import TribeCriteria
 
 # ------------------------- #
 # Python Modules
@@ -20,19 +20,25 @@ from TRIBECaller.Utilities.utils import *
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
+
+
 def plot_editing_sites(target_path:str,
 					   control_path:str,
+					   output_path:str,
 					   region:str,
-					   output_path:str=None,
+					   criteria,
 					   call_editing_sites=True,
-					   a_content_threshold=0.8,
 					   dpi=300):
+	tc = TribeCriteria()
+	for k,v in criteria.items():
+		if v:
+			tc.set_args(k,v)
 	TEC = TribeCaller(target_path,control_path)
 	chr_,start,end=parse_region(region)
 	if call_editing_sites:
-		region,perc,edi=TEC.compute_region_as_percentage(chr_,start,end,call_editing_sites=True)
+		region,perc,edi=TEC.compute_region_as_percentage(chr_,start,end, call_editing_sites=True, **tc.render_args())
 	else:
-		region,perc=TEC.compute_region_as_percentage(chr_,start,end)
+		region,perc=TEC.compute_region_as_percentage(chr_,start,end, call_editing_sites=False, **tc.render_args())
 	fig,(ax1,ax2)=plt.subplots(2,1,figsize=(16,6))
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	ax1.set_xbound(region[0],region[-1]+1)
@@ -74,14 +80,19 @@ def plot_editing_sites(target_path:str,
 
 def plot_editing_region(target_path:str,
 					   control_path:str,
-					   gtf_path:str=None,
+					   output_path:str,
+					   gtf_path:str,
+					   criteria,
 					   region:str=None,
 					   gene_ensembl_id=None,
 					   gene_symbol=None,
-					   output_path:str=None,
 					   call_editing_sites=True,
 					   dpi=300):
 	TEC = TribeCaller(target_path,control_path)
+	tc = TribeCriteria()
+	for k,v in criteria.items():
+		if v:
+			tc.set_args(k,v)
 	print(GET_CUR_TIME("Fetching GTF file"))
 	gr = GtfReads(gtf_path)
 	if region:
@@ -96,7 +107,7 @@ def plot_editing_region(target_path:str,
 	else:
 		raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
 	print(GET_CUR_TIME("Computing coverage and editing sites"))
-	reg, cov, edi_f, edi_r, diff = TEC.call_editing_region_coverage(chr_,start,end)
+	reg, cov, edi_f, edi_r, diff = TEC.call_editing_region_coverage(chr_,start,end, **tc.render_args())
 	plt.subplots_adjust(hspace=1,bottom=.2)
 	print(GET_CUR_TIME("Plotting coverage and editing sites"))
 	gs = gridspec.GridSpec(5, 1, height_ratios=[3,.5,1,.5,.5]) 

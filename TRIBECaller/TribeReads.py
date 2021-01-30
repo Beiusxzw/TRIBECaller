@@ -55,6 +55,8 @@ class TribeReads(object):
 		@args exclude
 		"""
 		reference_id = self.get_reference_id(reference_id)
+		if exclude:
+			return FLATTEN(list(map(lambda reads: READ_PAIR((reads[0].get_reference_positions(), GET_FORWARD_SEQUENCE(reads[0])), (reads[1].get_reference_positions(), GET_FORWARD_SEQUENCE(reads[1]))), READ_PAIR_GENERATOR(pysam.AlignmentFile(self.file_path), reference_id, start, end))))
 		return FLATTEN(list(map(lambda reads: [(read.get_reference_positions(), GET_FORWARD_SEQUENCE(read)) for read in reads], READ_PAIR_GENERATOR(pysam.AlignmentFile(self.file_path), reference_id, start, end))))
 
 	def map_func(self, chrom, bin_size, reads):
@@ -92,9 +94,12 @@ class TribeReads(object):
 	def build_nucleotides_dict_par(self, reference_id, start:int, end:int, bin_size = 1):
 		raise NotImplementedError("This method has not been implemented")
 
-	def build_atcg_dict(self, reference_id, start:int, end:int, bin_size = 1):
+	def build_atcg_dict(self, reference_id, start:int, end:int, bin_size = 1, paired=False, exclude_gap=False):
 		reference_id = self.get_reference_id(reference_id)
-		reads = self.get_reads(reference_id, start, end)
+		if paired:
+			reads = self.get_reads_paired(reference_id, start, end, exclude=exclude_gap)
+		else:
+			reads = self.get_reads(reference_id, start, end)
 		atcg_dict = ATCGDict(reference_id, bin_size)
 		for i in reads:
 			atcg_dict(i)
@@ -106,13 +111,17 @@ class TribeReads(object):
 			atcg_dict(i)
 		return atcg_dict
 
-	def build_atcg_dict_par(self, reference_id, start_end_list, n_threads, bin_size = 1):
+	def build_atcg_dict_par(self, reference_id, start_end_list, n_threads, bin_size = 1, paired=False, exclude_gap=False):
 		reference_id = self.get_reference_id(reference_id)
 		reads_list = ThreadDataList(n_threads)
 		map_func = partial(self.build_atcg_dict_par_func, reference_id, bin_size)
 		map_reduce = MapReduce(map_func=map_func, reduce_func=None, num_workers = n_threads)
-		for i in start_end_list:
-			reads_list.append(self.get_reads(reference_id, i[0], i[1]))
+		if paired:
+			for i in start_end_list:
+				reads_list.append(self.get_reads_paired(reference_id, i[0], i[1], exclude=exclude_gap))
+		else:
+			for i in start_end_list:
+				reads_list.append(self.get_reads(reference_id, i[0], i[1]))
 		return map_reduce.proc_map(reads_list)
 
 

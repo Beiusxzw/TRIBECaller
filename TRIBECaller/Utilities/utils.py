@@ -3,6 +3,7 @@
 # Author: Ziwei Xue
 
 import time
+import numpy as np
 from TRIBECaller._version import __version__
 
 
@@ -13,6 +14,9 @@ def ROUND_DOWN(a, n):
     return a - a % n
 
 def FLATTEN(x): return [i for s in x for i in s]
+
+def CLOSEST_INDEX(a, i):
+    return np.argmin(np.array(list(map(lambda x: np.inf if x < 0 else x, (np.array(a)-i)))))
 
 def CONDENSE(arr, bin_size):
     res = []
