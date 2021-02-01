@@ -29,23 +29,10 @@ def CONDENSE(arr, bin_size):
             temp=0
     return res
 
-def CONDENSE_AVG(arr, bin_size):
-    return np.array(CONDENSE(arr, bin_size)) / bin_size
-
-def REVERSE_CONDENSE(arr,bin_size):
-    return FLATTEN(map(lambda x:[x] * bin_size, arr))
-
-def PICK_LAST(arr, bin_size):
+def PICK(arr, bin_size):
     res = []
     for i in range(len(arr)):
         if i % bin_size == bin_size-1:
-            res.append(arr[i])
-    return res
-
-def PICK_FIRST(arr, bin_size):
-    res = []
-    for i in range(len(arr)):
-        if i % bin_size == 0:
             res.append(arr[i])
     return res
 
@@ -66,7 +53,7 @@ def PRINT_LOGO():
     print("")
 
 def PRINT_INFO():
-    print("Version: " + __version__ + ", Written by Snow")
+    print("Version: " + GET_BLUE(__version__))
 
 def GET_RED(s):
     return "\x1b[{};{};{}m".format(BackgroundLighness.LEVEL2, FontColor.RED, BackgroundColor.NULL) + s + "\x1b[0m"

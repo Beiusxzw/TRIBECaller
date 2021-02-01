@@ -20,8 +20,4 @@ def make_nucleotides_elements(text, x=0.0, y=0.0, width=1.0, height=1.0, color='
     trafo.scale(1 / bwidth * width, 1 / bheight * height)
     trafo.translate(x,y)
     tp = tp.transformed(trafo)
-<<<<<<< HEAD
-    return PathPatch(tp, facecolor=color, edgecolor=(0.0, 0.0, 0.0, 0))
-=======
-    return PathPatch(tp, facecolor=color, edgecolor=(0.0, 0.0, 0.0, 0))
->>>>>>> commit bug fixed
+

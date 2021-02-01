@@ -11,8 +11,8 @@ from TRIBECaller.Plotting.PlotNucleotides import *
 from TRIBECaller.Plotting.PlotGene import *
 from TRIBECaller.Utilities.Parsers import parse_region
 from TRIBECaller.Utilities.utils import *
-from TRIBECaller.TribeCriteria import TribeCriteria
 from TRIBECaller.Utilities.DB import *
+from TRIBECaller.TribeCriteria import TribeCriteria
 
 # ------------------------- #
 # Python Modules
@@ -29,7 +29,6 @@ def plot_editing_sites(target_path:str,
 					   region:str,
 					   criteria,
 					   call_editing_sites=True,
-					   bin_size=10,
 					   dpi=300):
 	tc = TribeCriteria()
 	for k,v in criteria.items():
@@ -54,7 +53,7 @@ def plot_editing_sites(target_path:str,
 	ax1.set_xticklabels(list(map(lambda x:str(x+1),region)),fontfamily="Arial")
 	ax2.set_xticklabels(list(map(lambda x:str(x+1),region)),fontfamily="Arial")   
 	ax1.set_title("Experient",fontsize=16,fontweight=600,fontfamily="Arial")  
-	ax2.set_title("Control",fontsize=16,fontweight=600,fontfamily="Arial")  
+	ax2.set_title("Control",fontsize=16,fontweight=600,fontfamily="Arial")
 
 	for ind,(pos,i) in enumerate(zip(region,perc)):
 		y1=0
@@ -84,12 +83,11 @@ def plot_editing_region(target_path:str,
 					   control_path:str,
 					   output_path:str,
 					   gtf_path:str,
+					   genome_assembly:str,
 					   criteria,
-					   genome_assembly,
 					   region:str=None,
 					   gene_ensembl_id=None,
 					   gene_symbol=None,
-					   bin_size=10,
 					   call_editing_sites=True,
 					   dpi=300):
 	TEC = TribeCaller(target_path,control_path)
@@ -97,8 +95,9 @@ def plot_editing_region(target_path:str,
 	for k,v in criteria.items():
 		if v:
 			tc.set_args(k,v)
-	print(GET_CUR_TIME("Fetching GTF file"))
+	
 	if gtf_path:
+		print(GET_CUR_TIME("Fetching GTF file"))
 		gr = GtfReads(gtf_path)
 		if region:
 			result = gr.fetch(region=region)
@@ -111,20 +110,29 @@ def plot_editing_region(target_path:str,
 			chr_,start,end=result[0][gr.Flag.Chromosome], min(list(map(lambda i:int(i[gr.Flag.Start]), result))),max(list(map(lambda i:int(i[gr.Flag.End]), result)))
 		else:
 			raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
-	elif genome_assembly:
-		if region:
-			chr_,start,end=parse_region(region)
-			result = sqlite_query_gtf_by_region(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", chr_, start, end)
-		
-		elif gene_ensembl_id:
-			result = sqlite_query_gtf_by_ensembl_geneid(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", gene_ensembl_id)
-			chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
-		elif gene_symbol:
-			result = sqlite_query_gtf_by_genename(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", gene_symbol)
-			chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
+	else:
+		if not genome_assembly:
+			raise ValueError("You must specify a genome assembly in the database if no gtf file provided")
 		else:
-			raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
-
+			print(GET_CUR_TIME("Retrieving information from gtf database"))
+			try:
+				conn = sqlite_connect("./database/" + genome_assembly + ".db")
+			except:
+				raise ValueError("It seems that {} have not been installed. Please install the database via".format(genome_assembly))
+			try:
+				if region:
+					chr_,start,end=parse_region(region)
+					result = sqlite_query_gtf_by_region(conn, chr_,start,end)
+				elif gene_ensembl_id:
+					result = sqlite_query_gtf_by_ensembl_geneid(conn, "pcg", gene_ensembl_id)
+					chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
+				elif gene_symbol:
+					result = sqlite_query_gtf_by_genename(conn, "pcg", gene_symbol)
+					chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
+				else:
+					raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
+			except:
+				raise ValueError("Nothing fetched from the database. Please check your input gene or region")
 
 	print(GET_CUR_TIME("Computing coverage and editing sites"))
 	reg, cov, edi_f, edi_r, diff = TEC.call_editing_region_coverage(chr_,start,end, **tc.render_args())
@@ -136,13 +144,11 @@ def plot_editing_region(target_path:str,
 	ax2 = fig.add_subplot(gs[1])
 	ax3 = fig.add_subplot(gs[2])
 	ax4 = fig.add_subplot(gs[3])
+	ax4.set_facecolor("#F0F0F0")
 	ax5 = fig.add_subplot(gs[4])
 	y_min = make_gene_elements(result,1,ax1)
-	reg2plot = PICK_FIRST(reg,bin_size)
-	h2plot = CONDENSE_AVG(list(map(lambda x:x[0],cov)), bin_size)
-	ax2.bar(height=h2plot,x=reg2plot[:-1] if len(reg2plot) > len(h2plot) else reg2plot, width=bin_size)
-	h2plot = CONDENSE_AVG(list(map(lambda x:x[1],cov)), bin_size)
-	ax5.bar(height=h2plot,x=reg2plot[:-1] if len(reg2plot) > len(h2plot) else reg2plot, width=bin_size, color="#FDBE84")
+	ax2.bar(height=list(map(lambda x:x[0],cov)),x=reg)
+	ax5.bar(height=list(map(lambda x:x[1],cov)),x=reg,color="#FDBE84")
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_f)), marker='$+$',color='red',s=3)
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_r)), marker='$-$',color='blue',s=3)
 	ax4.bar(x=reg,height=diff)
@@ -150,13 +156,14 @@ def plot_editing_region(target_path:str,
 		ax1.spines[i].set_visible(False)
 		ax2.spines[i].set_visible(False)
 		ax3.spines[i].set_visible(False)
+		ax4.spines[i].set_visible(False)
 		ax5.spines[i].set_visible(False)
 	ax1.spines['bottom'].set_visible(False)
 	ax3.spines['bottom'].set_visible(False)
-	ax1.set_ylabel("Gene",rotation = 90,fontfamily="Arial",fontsize=6)
+	ax1.set_ylabel("Genes",rotation = 90,fontfamily="Arial",fontsize=6)
 	ax2.set_ylabel("TRIBE RNA-seq \ncoverage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
 	ax3.set_ylabel("Editing Events",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
-	ax4.set_ylabel("Relative S/A \npercentage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
+	ax4.set_ylabel("Relative \npercentage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
 	ax5.set_ylabel("Control RNA-seq \ncoverage",rotation = 90,fontfamily="Arial",fontsize=6,fontweight=600)
 	ax1.get_yaxis().set_ticks([])
 	ax2.get_yaxis().set_ticks([])
@@ -172,7 +179,7 @@ def plot_editing_region(target_path:str,
 	ax3.set_xbound(x_min,x_max)
 	ax4.set_xbound(x_min,x_max)
 	ax5.set_xbound(x_min,x_max)
-	ticks_range = PICK_LAST(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)
+	ticks_range = PICK(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)
 	ax5.get_xaxis().set_ticks(ticks_range)
 	ax5.set_xticklabels(list(map(lambda x:str(x),ticks_range)),fontfamily="Arial")
 	ax5.set_xlabel("chromosome "+chr_,fontfamily="Arial",fontweight=600)

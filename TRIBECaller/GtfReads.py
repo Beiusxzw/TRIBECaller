@@ -29,7 +29,7 @@ class GtfReads(object):
 		Score = 5
 		Strand = 6
 		Frame = 7
-		Attribute =8
+		Attribute = 8
 
 	def __init__(self, file_path):
 		self.fn = file_path
@@ -44,9 +44,10 @@ class GtfReads(object):
 				if s[0]=="#": 
 					continue 
 				s = parse_gtf_line(s)
-				yield (s[:8],s[8])
+				s = (s[:8], s[8])
+				yield s
 
-	def fetch(self,region:str=None,gene_ensembl_id:str=None,gene_symbol:str=None,source:str=None):
+	def fetch(self, region:str=None, gene_ensembl_id:str=None, gene_symbol:str=None, source:str=None):
 		"""
 		Read gtf files and returns rows contains the provided information.
 		@args region: A string describing the genomic region. For example: 1:1280857-1398034

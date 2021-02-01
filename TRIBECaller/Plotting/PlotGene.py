@@ -40,11 +40,11 @@ def make_gene_elements(gene_gtfs, y_pos, ax, enable_arrow=False):
 			gene_length = int(i[GtfReads.Flag.End]) - int(i[GtfReads.Flag.Start])
 			cur_end = int(i[GtfReads.Flag.End])
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]), ga_esti)
-			if enable_arrow:
-				line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#B8860B",mew=0.5,lw=.5,ms=5,mfc="#B8860B")
+			line = ax.plot(x, [y_pos] * len(x), marker=mark, fillstyle='none',color="#B8860B",mew=0.5,lw=.5,ms=5,mfc="#B8860B")
 			x = np.arange(int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 			line = ax.plot(x, [y_pos] * len(x), linewidth=1,color="#B8860B")
-			ax.text(int(i[GtfReads.Flag.Start]), y_pos-0.1, i[GtfReads.Flag.Attribute]["gene_name"] + ">" if i[GtfReads.Flag.Strand] == '+' else i[GtfReads.Flag.Attribute]["gene_name"] + "<" , fontfamily="Arial", fontsize=4)
+			if enable_arrow:
+				ax.text(int(i[GtfReads.Flag.Start]), y_pos-0.1, i[GtfReads.Flag.Attribute]["gene_name"] + ">" if i[GtfReads.Flag.Strand] == '+' else i[GtfReads.Flag.Attribute]["gene_name"] + "<" , fontfamily="Arial", fontsize=4)
 			flag=True
 			pos_dict[y_pos] = (int(i[GtfReads.Flag.Start]), int(i[GtfReads.Flag.End]))
 		elif i[GtfReads.Flag.Feature] == "exon":

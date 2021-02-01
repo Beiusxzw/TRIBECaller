@@ -2,7 +2,6 @@
 #!/usr/bin/env python
 # Author: Ziwei Xue
 #
-# Description: DB.py includes 
 # ------------------------- #
 # Python Modules
 # ------------------------- #
@@ -18,7 +17,7 @@ def sqlite_delete_gtf_table(conn,tbname):
 	conn.commit()
 	conn.close()
 
-def sqlite_create_pcg_gtf_table(conn,tbname):
+def sqlite_create_gtf_table(conn,tbname):
 	gtf_format = """ (seqname VARCHAR(10) NOT NULL,
                 source VARCHAR(20) NOT NULL,
                 feature VARCHAR(20) NOT NULL,
@@ -60,24 +59,6 @@ def sqlite_create_pcg_gtf_table(conn,tbname):
 	conn.commit()
 	conn.close()
 
-def sqlite_create_te_gtf_table(conn,tbname):
-	gtf_format = """ (seqname VARCHAR(10) NOT NULL,
-                source VARCHAR(20) NOT NULL,
-                feature VARCHAR(20) NOT NULL,
-                start INTEGER NOT NULL,
-                end INTEGER NOT NULL,
-                score VARCHAR(10) NOT NULL,
-                strand VARCHAR(1) NOT NULL,
-                frame VARCHAR(1) NOT NULL,
-                gene_id VARCHAR(25),
-                transcript_id VARCHAR(20),
-                family_id VARCHAR(20),
-                class_id VARCHAR(20))"""
-	c = conn.cursor()
-	c.execute("""CREATE TABLE {} """.format(tbname) + gtf_format)
-	conn.commit()
-	conn.close()
-
 
 def sqlite_insert_gtf_table(conn, tabname, data):
 	c = conn.cursor()
@@ -105,13 +86,3 @@ def sqlite_query_gtf_by_ensembl_geneid(conn, tabname, geneid):
 	c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_name FROM {} WHERE gene_id='{}'".format(tabname, genename))
 	result = c.fetchall()
 	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))    
-
-
-def sqlite_query_gtf_by_tename(conn, tabname, genename):
-	c = conn.cursor()
-	if "dup" in genename:
-		c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_id FROM {} WHERE transcript_id='{}'".format(tabname, genename))
-	else:
-		c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_id FROM {} WHERE gene_id='{}'".format(tabname, genename))
-	result = c.fetchall()
-	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))
