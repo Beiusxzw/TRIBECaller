@@ -34,6 +34,18 @@ class GtfReads(object):
 	def __init__(self, file_path):
 		self.fn = file_path
 
+	def read(self):
+		result = []
+		with open(self.fn) as f:
+			while True: 
+				s = f.readline() 
+				if not s: 
+					break	
+				if s[0]=="#": 
+					continue 
+				s = parse_gtf_line(s)
+				yield (s[:8],s[8])
+
 	def fetch(self,region:str=None,gene_ensembl_id:str=None,gene_symbol:str=None,source:str=None):
 		"""
 		Read gtf files and returns rows contains the provided information.
