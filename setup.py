@@ -6,6 +6,7 @@ import re
 from setuptools import setup, find_packages
 from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.install import install as _install
+from os import path
 
 VERSION_PY = """
 # This file is originally generated from Git information by running 'setup.py
@@ -13,6 +14,10 @@ VERSION_PY = """
 __version__ = '%s'
 """
 
+
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 def get_version():
     try:
@@ -47,8 +52,9 @@ setup(
     author='Ziwei Xue',
     author_email='xueziweisz@gmail.com',
     packages=find_packages(),
-    scripts=['bin/CallEditingSites'],
     include_package_data=True,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Bio-Informatics'],
@@ -58,5 +64,5 @@ setup(
         "pysam >= 0.14.0",
         "tqdm >= 4.36.1"
     ],
-    entry_points={"console_scripts":[""]}
+    entry_points={"console_scripts":["TRIBECaller=TRIBECaller:main"]}
 )
