@@ -12,6 +12,7 @@ from TRIBECaller.Plotting.PlotGene import *
 from TRIBECaller.Utilities.Parsers import parse_region
 from TRIBECaller.Utilities.utils import *
 from TRIBECaller.TribeCriteria import TribeCriteria
+from TRIBECaller.Utilities.DB import *
 
 # ------------------------- #
 # Python Modules
@@ -28,6 +29,7 @@ def plot_editing_sites(target_path:str,
 					   region:str,
 					   criteria,
 					   call_editing_sites=True,
+					   bin_size=10,
 					   dpi=300):
 	tc = TribeCriteria()
 	for k,v in criteria.items():
@@ -83,9 +85,11 @@ def plot_editing_region(target_path:str,
 					   output_path:str,
 					   gtf_path:str,
 					   criteria,
+					   genome_assembly,
 					   region:str=None,
 					   gene_ensembl_id=None,
 					   gene_symbol=None,
+					   bin_size=10,
 					   call_editing_sites=True,
 					   dpi=300):
 	TEC = TribeCaller(target_path,control_path)
@@ -94,18 +98,34 @@ def plot_editing_region(target_path:str,
 		if v:
 			tc.set_args(k,v)
 	print(GET_CUR_TIME("Fetching GTF file"))
-	gr = GtfReads(gtf_path)
-	if region:
-		result = gr.fetch(region=region)
-		chr_,start,end=parse_region(region)
-	elif gene_ensembl_id:
-		result = gr.fetch(gene_ensembl_id = gene_ensembl_id)
-		chr_,start,end=result[0][gr.Flag.Chromosome], min(list(map(lambda i:int(i[gr.Flag.Start]), result))),max(list(map(lambda i:int(i[gr.Flag.End]), result)))
-	elif gene_symbol:
-		result = gr.fetch(gene_symbol = gene_symbol)
-		chr_,start,end=result[0][gr.Flag.Chromosome], min(list(map(lambda i:int(i[gr.Flag.Start]), result))),max(list(map(lambda i:int(i[gr.Flag.End]), result)))
-	else:
-		raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
+	if gtf_path:
+		gr = GtfReads(gtf_path)
+		if region:
+			result = gr.fetch(region=region)
+			chr_,start,end=parse_region(region)
+		elif gene_ensembl_id:
+			result = gr.fetch(gene_ensembl_id = gene_ensembl_id)
+			chr_,start,end=result[0][gr.Flag.Chromosome], min(list(map(lambda i:int(i[gr.Flag.Start]), result))),max(list(map(lambda i:int(i[gr.Flag.End]), result)))
+		elif gene_symbol:
+			result = gr.fetch(gene_symbol = gene_symbol)
+			chr_,start,end=result[0][gr.Flag.Chromosome], min(list(map(lambda i:int(i[gr.Flag.Start]), result))),max(list(map(lambda i:int(i[gr.Flag.End]), result)))
+		else:
+			raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
+	elif genome_assembly:
+		if region:
+			chr_,start,end=parse_region(region)
+			result = sqlite_query_gtf_by_region(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", chr_, start, end)
+		
+		elif gene_ensembl_id:
+			result = sqlite_query_gtf_by_ensembl_geneid(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", gene_ensembl_id)
+			chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
+		elif gene_symbol:
+			result = sqlite_query_gtf_by_genename(sqlite_connect("database/{}.db".format(genome_assembly)), "pcg", gene_symbol)
+			chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
+		else:
+			raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
+
+
 	print(GET_CUR_TIME("Computing coverage and editing sites"))
 	reg, cov, edi_f, edi_r, diff = TEC.call_editing_region_coverage(chr_,start,end, **tc.render_args())
 	plt.subplots_adjust(hspace=1,bottom=.2)
@@ -118,8 +138,11 @@ def plot_editing_region(target_path:str,
 	ax4 = fig.add_subplot(gs[3])
 	ax5 = fig.add_subplot(gs[4])
 	y_min = make_gene_elements(result,1,ax1)
-	ax2.bar(height=list(map(lambda x:x[0],cov)),x=reg)
-	ax5.bar(height=list(map(lambda x:x[1],cov)),x=reg,color="#FDBE84")
+	reg2plot = PICK_FIRST(reg,bin_size)
+	h2plot = CONDENSE_AVG(list(map(lambda x:x[0],cov)), bin_size)
+	ax2.bar(height=h2plot,x=reg2plot[:-1] if len(reg2plot) > len(h2plot) else reg2plot, width=bin_size)
+	h2plot = CONDENSE_AVG(list(map(lambda x:x[1],cov)), bin_size)
+	ax5.bar(height=h2plot,x=reg2plot[:-1] if len(reg2plot) > len(h2plot) else reg2plot, width=bin_size, color="#FDBE84")
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_f)), marker='$+$',color='red',s=3)
 	ax3.scatter(x=reg,y=list(map(lambda x:np.random.random() if x else None, edi_r)), marker='$-$',color='blue',s=3)
 	ax4.bar(x=reg,height=diff)
@@ -149,7 +172,7 @@ def plot_editing_region(target_path:str,
 	ax3.set_xbound(x_min,x_max)
 	ax4.set_xbound(x_min,x_max)
 	ax5.set_xbound(x_min,x_max)
-	ticks_range = PICK(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)
+	ticks_range = PICK_LAST(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)
 	ax5.get_xaxis().set_ticks(ticks_range)
 	ax5.set_xticklabels(list(map(lambda x:str(x),ticks_range)),fontfamily="Arial")
 	ax5.set_xlabel("chromosome "+chr_,fontfamily="Arial",fontweight=600)

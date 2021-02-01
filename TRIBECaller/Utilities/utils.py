@@ -29,10 +29,23 @@ def CONDENSE(arr, bin_size):
             temp=0
     return res
 
-def PICK(arr, bin_size):
+def CONDENSE_AVG(arr, bin_size):
+    return np.array(CONDENSE(arr, bin_size)) / bin_size
+
+def REVERSE_CONDENSE(arr,bin_size):
+    return FLATTEN(map(lambda x:[x] * bin_size, arr))
+
+def PICK_LAST(arr, bin_size):
     res = []
     for i in range(len(arr)):
         if i % bin_size == bin_size-1:
+            res.append(arr[i])
+    return res
+
+def PICK_FIRST(arr, bin_size):
+    res = []
+    for i in range(len(arr)):
+        if i % bin_size == 0:
             res.append(arr[i])
     return res
 

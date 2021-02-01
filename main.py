@@ -70,15 +70,15 @@ def main():
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("plotEditingRegion")))
 		dpi = args.dpi if args.dpi else 300
 		if args.region:
-			plot_editing_region(args.target,args.control,gtf_path=args.gtf,region=args.region,output_path=args.out,call_editing_sites=True,dpi=dpi, criteria=criteria)
+			plot_editing_region(args.target,args.control,gtf_path=args.gtf, genome_assembly = args.genome, region=args.region,output_path=args.out,call_editing_sites=True,dpi=dpi, criteria=criteria)
 		elif args.gene:
 			gene = args.gene
 			if gene.startswith("ENS"):
 				gene = list(map(lambda x:x.strip(), gene.split(','))) if ',' in gene else gene.strip()
-				plot_editing_region(args.target,args.control,gtf_path=args.gtf,gene_ensembl_id=gene,output_path=args.out,call_editing_sites=True,dpi=dpi,criteria=criteria)
+				plot_editing_region(args.target,args.control,gtf_path=args.gtf, genome_assembly = args.genome, gene_ensembl_id=gene,output_path=args.out,call_editing_sites=True,dpi=dpi,criteria=criteria)
 			else:
 				gene = list(map(lambda x:x.strip(), gene.split(','))) if ',' in gene else gene.strip()
-				plot_editing_region(args.target,args.control,gtf_path=args.gtf,gene_symbol=gene,output_path=args.out,call_editing_sites=True,dpi=dpi,criteria=criteria)
+				plot_editing_region(args.target,args.control,gtf_path=args.gtf, genome_assembly = args.genome, gene_symbol=gene,output_path=args.out,call_editing_sites=True,dpi=dpi,criteria=criteria)
 		print(GET_CUR_TIME("Running completed."))
 	else:
 		raise TypeError("Unknown program name")
@@ -177,7 +177,8 @@ python main.py plotEditingRegion -t Experiment_rep1_1_srt.bam -c Control_rep1_1_
 	argparser_plot_editing_region.add_argument('-o', '--out', type=str,  help=GET_GREEN('prefix of output figure'),required=True)
 	argparser_plot_editing_region.add_argument('--dpi', type=int, help=GET_GREEN('dpi of the output figure'))
 	argparser_plot_editing_region.add_argument('-g', '--gene', type=str, help=GET_GREEN('gene of intersets. For multiple genes, use comma separated input.'),required=False)
-	argparser_plot_editing_region.add_argument('-gtf', '--gtf', type=str, help=GET_GREEN('gtf file to plot the genes.'),required=True)
+	argparser_plot_editing_region.add_argument('-gtf', '--gtf', type=str, help=GET_GREEN('gtf file to plot the genes.'),required=False)
+	argparser_plot_editing_region.add_argument('-genome', '--genome', type=str, help=GET_GREEN('Genome assembly to use.'), choices=["hg38"],required=False)
 	argparser_plot_editing_region.add_argument('--odds-thres', type=float, help=GET_GREEN("odds ratio threshold"),required=False)
 	argparser_plot_editing_region.add_argument('--content-thres', type=float, help=GET_GREEN("A/T content threshold in the control reads"),required=False)
 	argparser_plot_editing_region.add_argument('--reads-cov-thres', type=float, help=GET_GREEN("reads coverage threshold"),required=False)

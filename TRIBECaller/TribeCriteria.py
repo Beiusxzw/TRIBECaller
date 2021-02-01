@@ -8,7 +8,7 @@ class TribeCriteria:
 				       reads_coverage_threshold = 10, 
 				       content_threshold=0.9, 
 				       diff_threshold = 0.005,
-				       pvalue_cutoff=0.3,
+				       pvalue_cutoff=0.05,
 				       paired=False,
 				       exclude_gap=False):
 		self.odds_threshold = odds_threshold
