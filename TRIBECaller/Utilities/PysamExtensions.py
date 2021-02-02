@@ -227,7 +227,7 @@ def READ_PAIR_GENERATOR(bam, reference_id, start:int, end:int):
                 yield read_dict[qname][0], read
             del read_dict[qname]
 
-def GET_WITHOUT_INSERTION(read, rev, clip=False,debug=False):
+def GET_WITHOUT_INSERTION(read, rev, debug=False):
     forward_sequence = read.get_forward_sequence()
     s = ''
     ind = 0
@@ -241,16 +241,33 @@ def GET_WITHOUT_INSERTION(read, rev, clip=False,debug=False):
         elif i[0] == 2:
             s = s + forward_sequence[ind:ind+i[1]]
             ind += i[1]
-        elif i[0] == 4 and clip:
+        elif i[0] == 4:
             ind += i[1]
         else:
-            if debug:
-                raise ValueError("mismatch other than Deletion or Insertion are not accepted! Please check your alignment")
-            else:
-                return None
+            pass
     return s
 
-def GET_FORWARD_SEQUENCE(read):
+def GET_QUAL_WITHOUT_INSERTION(read, rev, debug=False):
+    forward_qualities = read.get_forward_qualities()
+    s = []
+    ind = 0
+    ct = read.cigartuples if rev else read.cigartuples[::-1]
+    for i in ct:
+        if i[0] == 0:
+            s = s + list(forward_qualities[ind:ind+i[1]])
+            ind += i[1]
+        elif i[0] == 1:
+            ind += i[1]
+        elif i[0] == 2:
+            s = s + list(forward_qualities[ind:ind+i[1]])
+            ind += i[1]
+        elif i[0] == 4:
+            ind += i[1]
+        else:
+            pass
+    return s
+
+def GET_FORWARD_SEQUENCE(read, out_rev=False):
     """
     @args an AlignedSegment object
     """
@@ -259,16 +276,34 @@ def GET_FORWARD_SEQUENCE(read):
     if IS_PAIRED(read):
         if IS_EQ_REF_FORWARD(read):
             if IS_PAIRED_FIRST(read):
+                if out_rev:
+                    return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev = False)), False
                 return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev = False))
             else:
+                if out_rev:
+                    return GET_WITHOUT_INSERTION(read, rev=True), True
                 return GET_WITHOUT_INSERTION(read, rev=True)
         else:
             if IS_PAIRED_FIRST(read):
-                return GET_WITHOUT_INSERTION(read,rev=True)
+                if out_rev:
+                    return GET_WITHOUT_INSERTION(read, rev=True), True
+                return GET_WITHOUT_INSERTION(read, rev=True)
             else:
-                return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read,rev=False))
+                if out_rev:
+                    return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev=False)), False
+                return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev=False))
     else:
         if IS_EQ_REF_FORWARD(read):
+            if out_rev:
+                return GET_WITHOUT_INSERTION(read, rev=False), False
             return GET_WITHOUT_INSERTION(read, rev=False)
         else:
+            if out_rev:
+                return  REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev=True)), True
             return REVERSE_COMPLEMENT(GET_WITHOUT_INSERTION(read, rev=True))
+
+def GET_POSITION_SEQ_FILTER_QUALITY(read):
+    pos = read.get_reference_positions()
+    read,rev= GET_FORWARD_SEQUENCE(read, True)
+    qual = GET_QUAL_WITHOUT_INSERTION(r,rev,False) if rev else GET_QUAL_WITHOUT_INSERTION(r,rev,False)
+    return ([pos[i] for i,j in enumerate(qual)],''.join([read[i] for i,j in enumerate(qual)]))

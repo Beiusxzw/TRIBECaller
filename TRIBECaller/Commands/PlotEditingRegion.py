@@ -124,10 +124,21 @@ def plot_editing_region(target_path:str,
 					chr_,start,end=parse_region(region)
 					result = sqlite_query_gtf_by_region(conn, chr_,start,end)
 				elif gene_ensembl_id:
+					if type(gene_ensembl_id) == list:
+						result = []
+						for i in gene_ensembl_id:
+							result = result + sqlite_query_gtf_by_genename(conn, "pcg", i)
+					else:
+						result = sqlite_query_gtf_by_genename(conn, "pcg", gene_ensembl_id)
 					result = sqlite_query_gtf_by_ensembl_geneid(conn, "pcg", gene_ensembl_id)
 					chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
 				elif gene_symbol:
-					result = sqlite_query_gtf_by_genename(conn, "pcg", gene_symbol)
+					if type(gene_symbol) == list:
+						result = []
+						for i in gene_symbol:
+							result = result + sqlite_query_gtf_by_genename(conn, "pcg", i)
+					else:
+						result = sqlite_query_gtf_by_genename(conn, "pcg", gene_symbol)
 					chr_,start,end=result[0][GtfReads.Flag.Chromosome], min(list(map(lambda i:int(i[GtfReads.Flag.Start]), result))),max(list(map(lambda i:int(i[GtfReads.Flag.End]), result)))
 				else:
 					raise ValueError("You must provide either a genomic region, gene ensembl id or gene symbol")
@@ -173,10 +184,11 @@ def plot_editing_region(target_path:str,
 	ax2.get_xaxis().set_ticks([])
 	ax3.get_xaxis().set_ticks([])
 	ax4.get_xaxis().set_ticks([])
-	ax1.set_ybound(y_min-0.2,1.2) if y_min < -1 else ax1.set_ybound(y_min-0.2,1.2) 
+	ax1.set_ybound(y_min-0.2,1.2) if y_min < -1 else ax1.set_ybound(0,1.2) 
 	x_min,x_max=ax1.get_xlim()
 	ax2.set_xbound(x_min,x_max)
 	ax3.set_xbound(x_min,x_max)
+	ax3.set_ybound(0,1)
 	ax4.set_xbound(x_min,x_max)
 	ax5.set_xbound(x_min,x_max)
 	ticks_range = PICK(list(range(int(x_min),int(x_max))),(x_max-x_min) // 10)

@@ -81,8 +81,25 @@ def sqlite_query_gtf_by_region(conn, tabname, chrom, start, end):
 	result = c.fetchall()
 	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))     
 
-def sqlite_query_gtf_by_ensembl_geneid(conn, tabname, geneid):
+def sqlite_query_gtf_by_ensembl_geneid(conn, geneid, tabname = "pcg"):
 	c = conn.cursor()
 	c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_name FROM {} WHERE gene_id='{}'".format(tabname, genename))
 	result = c.fetchall()
 	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))    
+
+
+def sqlite_query_gtf_by_tename(conn, tename, tabname="te"):
+	c = conn.cursor()
+	if "dup" in tename:
+		c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_id, transcript_id FROM {} WHERE transcript_id='{}'".format(tabname, tename))
+	else:
+		c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_id, transcript_id FROM {} WHERE gene_id='{}'".format(tabname, tename))
+	result = c.fetchall()
+	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))     
+
+
+def sqlite_query_te_gtf_by_region(conn, tabname, chrom, start, end):
+	c = conn.cursor()
+	c.execute("SELECT seqname, source, feature, start, end, score, strand, frame, gene_id, transcript_id FROM {} WHERE seqname='{}' AND start>{} AND end<{}".format(tabname, chrom, start, end))
+	result = c.fetchall()
+	return list(map(lambda x:list(x)[:8] + [{"gene_name":x[8]}], result))   
