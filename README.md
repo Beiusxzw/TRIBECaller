@@ -1,6 +1,6 @@
 # [software] TRIBECaller
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=NTFkMTBiNDcwNTAxMTAwMGI0NzVlNDRlYWQwNDUzODFfMGg1SG12cVJVZWc5VjB1V1NEcTUyYWFIdHU2djROakVfVG9rZW46Ym94Y25qenprWktTOWZkZG55bG9DdUpGU2plXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/logo.png)
 
 ## Table of Contents
 * **[Project Timeline](#project-timeline)**
@@ -28,13 +28,13 @@ Unable to paste block outside Docs
 
 RNA editing are ubiquitous in a wide range of organisms and it is an crucial post-transcriptional mechanism to regulate the function of primary mRNA through insertion, deletion, or modification (editing) of specific nucleotides. RNA editing have long been known to occur in tRNAs, rRNAs, and mRNAs. Two common types of RNA editing involve deamination reaction, either by deamination of cytidine (C) produces uridine (U), or deamination of adenine (A) to inosine (I). In mammals, two adenosine deaminase (ADAR) proteins have been found to catalyzes adenine-to inosine (A-to-I) conversion in dsRNA, without additional factors. The inosine can be then converted to guanosine and paired with cytosine. 
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=YThiYjZhYTJkNzE2ZjA0YjYxYTQwNzg3Mjc0ZmM4MzhfUzdKQndBWXgzQWFjYlhZenJqdlh3ckllc2pWSU83NDJfVG9rZW46Ym94Y24yWUlNN09hVm8zejVoVVlQc1I4SnlmXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/ADAR.png)
 
 (Figure derived from RNA (2001) Dieter Söll, Susumu Nishimura and Peter Moore (Eds.)
 
 *Drosophila melanogaster* has a single Adar gene encoding a protein related to mammalian ADAR2 that edits adenine in early mRNA transcripts. Similar to the mammalian ADAR2, endogenous Drosophila ADAR is a modular enzyme consisting a dsRNA binding motif and a catalytic domain. McMahon et al. (2016) have developed TRIBE (**T**argets of **R**NA-binding proteins **I**dentified **B**y **E**diting) using only the fusion protein containing RNA binding protein of interest and the catalytic domain of *Drosophila* ADAR (ADARcd). The irreservable editing would allow RNA-sequencing to identify the editing sites and thus the binding targets of RBPs will be discovered.
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=ZjNlNDc2NGQ1MGFmNzg3ZWM5MDJjNGM1ZmIyMjkzN2JfNWhiVTVYMTNVWEVqTkpoeGdmZHlaNGtLMGRucmh5RlZfVG9rZW46Ym94Y253SXVIRDBiZUhjTXo1NGpiNWR2bDJiXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/TRIBE.png)
 
 (Figure derived from McMahon et al. (2016))
 
@@ -46,7 +46,7 @@ Scripts or software written in different programming languages have provided too
 
 **TRIBECaller** converts every read from the bam file to the forward strand of the reference genome, and restricts A-to-G mutations in transcripts encoded by the forward strand and T-to-C mutations in transcripts encoded by the reverse strand.
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=MDBhY2RlYmUzNzQwZDliYzNmMTVmMjZmYmJmMWQxOWFfcEhscTV2cHRuTnpzQ3lta2liS0xsTzdCbExXazVmeUdfVG9rZW46Ym94Y25hR2NtT0FBeWllNUhnWUJiS0RzQWVlXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/FR.png)
 
 Currently, **TRIBECaller** use fisher's exact test to call RNA editing sites.
 
@@ -64,9 +64,7 @@ $$
 , 
 $$\mathrm{odds} = \frac{\frac{n}{m}}{\frac{b}{a}}
 $$
-
 The program will also output the value of difference of G/C content defined by:
-
 $$
 \mathrm{diff} = \frac{n}{m+n} - \frac{b}{a+b}
 $$
@@ -77,7 +75,7 @@ $$
 
 Using mapReduce as our parallel computation model, **TRIBECaller** uses multiple worker threads to compute the editing sites and test statistics.
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=ZTM1ODM4YmU3ODU5NmEyMGVlOTZkNTYyZDcyM2ExYWZfdTBEVmM1U1dwamx1ejFQbnJ5M2d2cDI4RVBSUW5mRlpfVG9rZW46Ym94Y25HcHhtSjRRMEI4YzdlbUxzWTFtRmVoXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/mapreduce.png)
 
 ### **Performance**
 
@@ -421,7 +419,7 @@ separated input.
   
 ```
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=ZmY2YTk4YTJjMTRhNGM3OTk3MWQxYjIzMGNjMWU0YWFfaUE5U0cwNUNBMU5CWEx0dE8wc3ZwNUdqUmdZeU5LRDZfVG9rZW46Ym94Y25OSVF4QTRKeEpwc2YzM1FGMHVaSE5mXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/nucleotides.png)
 
 For example,
 
@@ -431,7 +429,7 @@ python main.py plotEditingRegion -t /Users/snowxue/Documents/TribeTest/CCT4_rep1
 
 gives
 
-![img](https://yy4h2ftvat.feishu.cn/space/api/box/stream/download/asynccode/?code=NGNhNGMwOTkwZTVjZDRlZTNmODg1MzhiODc2ZWNhNDZfRXpPbTdGc1BSdlpqZ0hyUjJZRlRvbk1PQ05HaXAxa0dfVG9rZW46Ym94Y25TVW1KaUJ6VFY1clBIWEVYTDFEQzJmXzE2MTE1NTY2MDE6MTYxMTU2MDIwMV9WNA)
+![img](https://github.com/Beiusxzw/TRIBECaller/blob/dev/src/regionplot.png)
 
 The first row is the gene annotation
 
@@ -455,12 +453,31 @@ Tfirth row is the read coverage in the control sample
 
 ### **Future Plan**
 
-- Parallel computation of the A(G)T(C) dictionary (Advanced data structure might be used; Try to overcome the GIL)
-- MapReduce mechanism on computing the A(G)T(C) dictionary might be considered.
-- Visualization of editing events in a wider genomic range.
-- Fetching the gtf file is slow. However, samtools do not support indexing the gtf format. We should make a custom index in the later versions.
-- Deal with stranded library.
-- Compile binary executables.
-- Whether to use beta-binomial distribution described in Nguyen et al., 2020.
-- High memory mode for faster computation.
-- More command line arguments, for customized editing site calling.
+- **Version 0.0.2a**
+
+  - More command line arguments, for customized editing site calling.
+
+  **Version 0.0.2b**
+
+  - Fetching the gtf file is slow. However, samtools do not support indexing the gtf format. We should make a custom index in the later versions.
+
+  **Version 0.0.2c**
+
+  - Test testPyPI compability
+
+  **Version 0.0.2**
+
+  - using Fisher’s exact test with a Benjimini-Hochberg multiple hypothesis testing correction
+  - Add Read quality filter
+
+  **Version 0.0.3-dev**
+
+  - Include endogenous RNA editing data, and include genome annotation file to exclude editing sites in non-coding region.
+  - Whether to use beta-binomial distribution described in Nguyen et al., 2020.
+
+  
+
+  - Analyze published data.
+    - Other published TRIBE Data
+    - ENCODE RNA-seq
+  - 
