@@ -296,7 +296,7 @@ class TribeCaller(object):
                 fd.write("\t".join([chrom] + [str(j[0]), str(j[0]+1)] +
                                    list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
 
-    def run(self, criteria, out_prefix, g_zip=False, contig=None):
+    def run(self, criteria, out_prefix, g_zip=False, contig=None, verbose=False):
         f = gzip.open(out_prefix + ".bed.gz",
                       "wt") if g_zip else open(out_prefix + ".txt", "w+")
         if contig:
@@ -307,7 +307,7 @@ class TribeCaller(object):
                 if chrom in contig:
                     print(GET_CUR_TIME("Start analysing " +
                                        GET_BLUE("chromosome {}".format(chrom))))
-                    for i in tqdm.trange(0, length, self.frame_size):
+                    for i in tqdm.trange(0, length, self.frame_size) if verbose else range(0, length, self.frame_size):
                         for j in self.call_editing_region(chrom, i, i+self.frame_size, **criteria.render_args()):
                             conc = list(map(str, j[1:]))
                             f.write(
@@ -316,14 +316,14 @@ class TribeCaller(object):
             for chrom, length in self._chrom_sizes.items():
                 print(GET_CUR_TIME("Start analysing " +
                                    GET_BLUE("chromosome {}".format(chrom))))
-                for i in tqdm.trange(0, length, self.frame_size):
+                for i in tqdm.trange(0, length, self.frame_size) if verbose else range(0, length, self.frame_size):
                     for j in self.call_editing_region(chrom, i, i+self.frame_size, **criteria.render_args()):
                         conc = list(map(str, j[1:]))
                         f.write(
                             "\t".join([chrom] + [str(j[0]), str(j[0]+1)] + conc) + "\n")
         f.close()
 
-    def run_par(self, criteria, out_prefix, n_threads, g_zip=False, contig=None):
+    def run_par(self, criteria, out_prefix, n_threads, g_zip=False, contig=None, verbose=False):
         print(GET_CUR_TIME("Running program using " +
                            GET_BLUE("{} threads".format(n_threads))))
         map_func = partial(self.call_editing_region_wrap,
@@ -343,7 +343,7 @@ class TribeCaller(object):
                         self.write_editing_events, f, chrom)
                     print(GET_CUR_TIME("Start analysing " +
                                        GET_BLUE("chromosome {}".format(chrom))))
-                    for i in tqdm.trange(0, length, self.frame_size*n_threads):
+                    for i in tqdm.trange(0, length, self.frame_size*n_threads) if verbose else range(0, length, self.frame_size*n_threads):
                         for j in range(i, i + self.frame_size * n_threads, self.frame_size):
                             if j + self.frame_size <= length:
                                 temp_data.append((j, j+self.frame_size))
@@ -357,7 +357,7 @@ class TribeCaller(object):
                     self.write_editing_events, f, chrom)
                 print(GET_CUR_TIME("Start analysing " +
                                    GET_BLUE("chromosome {}".format(chrom))))
-                for i in tqdm.trange(0, length, self.frame_size*n_threads):
+                for i in tqdm.trange(0, length, self.frame_size*n_threads) if verbose else range(0, length, self.frame_size*n_threads):
                     for j in range(i, i + self.frame_size * n_threads, self.frame_size):
                         if j + self.frame_size <= length:
                             temp_data.append((j, j+self.frame_size))
@@ -365,7 +365,7 @@ class TribeCaller(object):
                         chrom, temp_data, n_threads, paired=criteria.paired, exclude_gap=criteria.exclude_gap))
                     temp_data.clear()
 
-    def run_editing_percentage(self, criteria, out_prefix, contig=None, g_zip=False):
+    def run_editing_percentage(self, criteria, out_prefix, contig=None, g_zip=False, verbose=False):
         if contig:
             if type(contig) == str:
                 contig = [contig]
@@ -377,7 +377,7 @@ class TribeCaller(object):
                 if chrom in contig:
                     print(GET_CUR_TIME("Start analysing " +
                                        GET_BLUE("chromosome {}".format(chrom))))
-                    for i in tqdm.trange(0, length, self.frame_size):
+                    for i in tqdm.trange(0, length, self.frame_size) if verbose else range(0, length, self.frame_size):
                         for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size, paired=criteria.paired, exclude_gap=criteria.exclude_gap):
                             conc = list(map(str, j[1:]))
                             f.write("\t".join(
@@ -386,14 +386,14 @@ class TribeCaller(object):
             for chrom, length in self._chrom_sizes.items():
                 print(GET_CUR_TIME("Start analysing " +
                                    GET_BLUE("chromosome {}".format(chrom))))
-                for i in tqdm.trange(0, length, self.frame_size):
+                for i in tqdm.trange(0, length, self.frame_size) if verbose else range(0, length, self.frame_size):
                     for j in self.compute_nucleotides_coverage(chrom, i, i+self.frame_size, paired=criteria.paired, exclude_gap=criteria.exclude_gap):
                         conc = list(map(str, j[1:]))
                         f.write("\t".join([chrom] + [str(j[0]), str(j[0]+1)] +
                                           list(map(str, j[1])) + list(map(str, j[2]))) + "\n")
         f.close()
 
-    def run_editing_percentage_par(self, out_prefix,  n_threads, contig=None, g_zip=False, paired=False, exclude_gap=False):
+    def run_editing_percentage_par(self, out_prefix,  n_threads, contig=None, g_zip=False, paired=False, exclude_gap=False, verbose=False):
         map_reduce = MapReduce(
             map_func=self.compute_nucleotides_coverage_wrap, reduce_func=None, num_workers=n_threads)
         temp_data = ThreadDataList(n_threads)
@@ -410,7 +410,7 @@ class TribeCaller(object):
                 if chrom in contig:
                     print(GET_CUR_TIME("Start analysing " +
                                        GET_BLUE("chromosome {}".format(chrom))))
-                    for i in tqdm.trange(0, length, self.frame_size * n_threads):
+                    for i in tqdm.trange(0, length, self.frame_size * n_threads) if verbose else range(0, length, self.frame_size * n_threads):
                         for j in range(i, i + self.frame_size * n_threads, self.frame_size):
                             if j + self.frame_size <= length:
                                 temp_data.append((j, j+self.frame_size))
@@ -424,7 +424,7 @@ class TribeCaller(object):
                     self.write_nucleotides_percentage, f, chrom)
                 print(GET_CUR_TIME("Start analysing " +
                                    GET_BLUE("chromosome {}".format(chrom))))
-                for i in tqdm.trange(0, length, self.frame_size*n_threads):
+                for i in tqdm.trange(0, length, self.frame_size * n_threads) if verbose else range(0, length, self.frame_size * n_threads):
                     for j in range(i, i + self.frame_size * n_threads, self.frame_size):
                         if j + self.frame_size <= length:
                             temp_data.append((j, j+self.frame_size))

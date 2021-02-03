@@ -14,12 +14,4 @@ def parse_region(s:str):
 
 def parse_gtf_line(s):
 	chrom, source, feature, start, end, score, strand, frame, attribute=s.split('\t')
-<<<<<<< HEAD
-<<<<<<< HEAD
 	return [chrom, source, feature, start, end, score, strand, frame] + [{x.strip().split(" ")[0]:x.strip().split(" ")[1][1:-1] for x in attribute.split(";")[:-1]}]                 
-=======
-	return [chrom, source, feature, start, end, score, strand, frame] + [{x.strip().split(" ")[0]:x.strip().split(" ")[1][1:-1] for x in attribute.split(";")[:-1]}]
->>>>>>> commit bug fixed
-=======
-	return [chrom, source, feature, start, end, score, strand, frame] + [{x.strip().split(" ")[0]:x.strip().split(" ")[1][1:-1] for x in attribute.split(";")[:-1]}]                 
->>>>>>> remove files from annoying apple sync.

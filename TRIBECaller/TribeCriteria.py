@@ -23,8 +23,4 @@ class TribeCriteria:
 		return self.__dict__
 
 	def set_args(self,arg_name,arg_value):
-<<<<<<< HEAD
 		return self.__setattr__(arg_name,arg_value)
-=======
-		return self.__setattr__(arg_name,arg_value)
->>>>>>> add .gitignore

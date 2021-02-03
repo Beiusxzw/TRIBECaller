@@ -43,7 +43,7 @@ def main():
 		from TRIBECaller.Commands.CallEditingSites import call_editing_sites
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("callEditingSites")))
 		contig = list(map(lambda x:x.strip(), args.contig.split(','))) if args.contig and ',' in args.contig else args.contig
-		call_editing_sites(args.target,args.control,args.outPrefix, g_zip=args.gzip, contig=contig, n_threads=args.thread, criteria=criteria)
+		call_editing_sites(args.target,args.control,args.outPrefix, g_zip=args.gzip, contig=contig, n_threads=args.thread, criteria=criteria, verbose=args.verbose)
 		print(GET_CUR_TIME("Running completed."))
 
 
@@ -51,7 +51,7 @@ def main():
 		from TRIBECaller.Commands.ComputeCoverage import compute_coverage
 		print(GET_CUR_TIME("Start running program " + GET_BLUE("computeCoverage")))
 		contig = list(map(lambda x:x.strip(), args.contig.split(','))) if args.contig and  ',' in args.contig else args.contig
-		compute_coverage(args.target,args.control,args.outPrefix, g_zip=args.gzip, contig=contig, n_threads=args.thread, paired=args.paired, exclude_gap = args.exclude_gap)
+		compute_coverage(args.target,args.control,args.outPrefix, g_zip=args.gzip, contig=contig, n_threads=args.thread, paired=args.paired, exclude_gap = args.exclude_gap, verbose=args.verbose)
 		print(GET_CUR_TIME("Running completed."))
 
 
@@ -121,6 +121,7 @@ python main.py callEditingSites -t Experiment_rep1_1_srt.bam -c Control_rep1_1_s
 	argparser_call_editing_sites.add_argument('--pvalue-thres', type=float, help=GET_GREEN("pvalue threshold"),required=False)
 	argparser_call_editing_sites.add_argument('--diff-thres', type=float, help=GET_GREEN("percentage difference threshold"),required=False)
 	argparser_call_editing_sites.add_argument('-pa', '--paired', help=GET_GREEN('only calculate the reads in proper pair'), action='store_true')
+	argparser_call_editing_sites.add_argument('-vb', '--verbose', help=GET_GREEN('show progress bar'), action='store_true')
 	argparser_call_editing_sites.add_argument('-eg', '--exclude-gap', help=GET_GREEN('if set --paired, -eg excludes the gap between Read1 and Read2'), action='store_true')
 	return 
 
@@ -139,6 +140,7 @@ python main.py computeCoverage -t Experiment_rep1_1_srt.bam -c Control_rep1_1_sr
 	argparser_compute_coverage.add_argument('-ct', '--contig', type=str,help=GET_GREEN('chromosome of interests'),required=False)
 	argparser_compute_coverage.add_argument('-gz', '--gzip', default=False,help=GET_GREEN('output gzipped file'),action='store_true')
 	argparser_compute_coverage.add_argument('-pa', '--paired', help=GET_GREEN('only calculate the reads in proper pair'), action='store_true')
+	argparser_compute_coverage.add_argument('-vb', '--verbose', help=GET_GREEN('show progress bar'), action='store_true')
 	argparser_compute_coverage.add_argument('-eg', '--exclude-gap', help=GET_GREEN('if set --paired, -eg excludes the gap between Read1 and Read2'), action='store_true')
 
 	return 
